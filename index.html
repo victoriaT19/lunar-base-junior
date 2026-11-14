@@ -1,846 +1,4314 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>Lunar Base Junior</title>
-<style>
-:root{--bg:#070b22;--card:#141c46;--card2:#1f2a63;--txt:#eef2ff;--mut:#a9b4e8;--acc:#ff9f45;--ok:#7bd88f;--bad:#ff5d73;--warn:#ffd166;--blue:#5aa9ff;--vio:#b388ff;--ice:#6fe3ff}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:#04061a;color:var(--txt);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;height:100%;overflow:hidden}
-#wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#04061a}
-#stage{position:relative;width:min(100vw,calc(100vh*16/9));height:min(100vh,calc(100vw*9/16));background:#000;overflow:hidden}
-canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:7px 12px;background:var(--acc);color:#1b1200;font-weight:bold}
-button:disabled{opacity:.4;cursor:not-allowed}
-button.alt{background:var(--card2);color:var(--txt)}
-button.on{background:var(--acc);color:#1b1200}
-.hud{position:absolute;pointer-events:none;font-size:clamp(10px,1.5vw,14px);text-shadow:0 1px 3px #000}
-#stats{left:1.2%;top:2%;width:26%;min-width:150px}
-.bar{margin-bottom:.8vw}
-.bar b{display:flex;justify-content:space-between;font-size:.9em}
-.bt{height:.9vw;min-height:7px;background:rgba(0,0,10,.6);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.2)}
-.bt i{display:block;height:100%;width:100%;transition:width .15s}
-.bar.low{animation:bl .7s infinite}
-@keyframes bl{50%{opacity:.4}}
-#obj{right:1.2%;top:2%;width:32%;min-width:170px;background:rgba(10,16,48,.75);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:.8vw 1vw;pointer-events:none}
-#obj small{color:var(--mut)}
-#units{right:1.2%;top:auto;bottom:2%;font-weight:bold;font-size:1.1em}
-#warn{left:50%;top:3%;transform:translateX(-50%);text-align:center;width:44%}
-#warn div{border-radius:10px;padding:.6vw 1vw;margin-bottom:.5vw;font-weight:bold}
-.wc{background:rgba(150,20,45,.9);animation:bl .6s infinite}
-.ww{background:rgba(120,90,10,.9)}
-#toast{left:50%;bottom:9%;transform:translateX(-50%);width:56%;text-align:center}
-#toast div{background:rgba(10,16,48,.88);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:.6vw 1vw;margin-top:.4vw}
-#hint{left:1.2%;bottom:1.5%;color:var(--mut);font-size:.85em}
-#scanbar{left:50%;top:60%;transform:translateX(-50%);width:20%;display:none}
-.top{position:absolute;right:1.2%;top:auto;bottom:6%;display:flex;gap:6px}
-.top button{pointer-events:auto}
-.overlay{position:absolute;inset:0;background:rgba(3,6,24,.9);display:none;align-items:center;justify-content:center;padding:2%;z-index:10}
-.overlay.on{display:flex}
-.modal{background:var(--card);border-radius:16px;max-width:760px;width:100%;max-height:96%;overflow:auto;padding:16px 18px;font-size:clamp(11px,1.6vw,15px)}
-.modal h2{margin:0 0 8px}
-.modal li{margin:5px 0}
-.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
-.row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card2);border-radius:10px;padding:7px 10px;margin:5px 0}
-.row small{color:var(--mut);display:block}
-.inv{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.inv span{background:var(--card2);border-radius:8px;padding:4px 8px;font-size:.9em}
-table{width:100%;border-collapse:collapse;font-size:.9em}
-td,th{padding:5px 7px;border-bottom:1px solid #2b3680;text-align:left;vertical-align:top}
-th{color:var(--warn)}
-a{color:#8fd3ff}
-.ok{color:var(--ok)}.no{color:var(--bad)}
-#joy{position:absolute;left:3%;bottom:5%;width:22%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);display:none;touch-action:none}
-#knob{position:absolute;left:50%;top:50%;width:40%;height:40%;margin:-20% 0 0 -20%;border-radius:50%;background:rgba(255,255,255,.3)}
-#tb{position:absolute;right:2%;bottom:14%;display:none;flex-direction:column;gap:8px}
-#tb button{width:14vw;max-width:90px;aspect-ratio:1;border-radius:50%;font-size:1.4em;padding:0}
-body.touch #joy{display:block}
-body.touch #tb{display:flex}
-</style>
-</head>
-<body>
-<div id="wrap"><div id="stage">
-<canvas id="cv" width="960" height="540"></canvas>
-<div class="hud" id="stats"></div>
-<div class="hud" id="obj"></div>
-<div class="hud" id="units"></div>
-<div class="hud" id="warn"></div>
-<div class="hud" id="toast"></div>
-<div class="hud" id="hint">WASD move · Shift sprint · hold click / Space: mining beam · E: scan / use · I: menu</div>
-<div class="hud" id="scanbar"><div class="bt"><i id="scanfill" style="background:var(--ice);width:0"></i></div></div>
-<div class="top"><button class="alt" id="bMenu">☰ Menu (I)</button><button class="alt" id="bSnd">🔊</button></div>
-<div id="joy"><div id="knob"></div></div>
-<div id="tb"><button id="tMine" class="alt">⛏</button><button id="tAct" class="alt">E</button><button id="tMenu" class="alt">☰</button></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+    <title>Lunar Base Junior</title>
+    <style>
+      :root {
+        --card: #141c46;
+        --card2: #1f2a63;
+        --txt: #eef2ff;
+        --mut: #a9b4e8;
+        --acc: #ff9f45;
+        --ok: #7bd88f;
+        --bad: #ff5d73;
+        --warn: #ffd166;
+        --blue: #5aa9ff;
+        --vio: #b388ff;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #04061a;
+        color: var(--txt);
+        font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+        height: 100%;
+        overflow: hidden;
+      }
+      #wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #stage {
+        position: relative;
+        width: min(100vw, calc(100vh * 16 / 9));
+        height: min(100vh, calc(100vw * 9 / 16));
+        background: #000;
+        overflow: hidden;
+      }
+      canvas#cv {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        border: 0;
+        border-radius: 10px;
+        padding: 7px 12px;
+        background: var(--acc);
+        color: #1b1200;
+        font-weight: bold;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      button.alt {
+        background: var(--card2);
+        color: var(--txt);
+      }
+      button.on {
+        background: var(--acc);
+        color: #1b1200;
+      }
+      .hud {
+        position: absolute;
+        pointer-events: none;
+        font-size: clamp(10px, 1.5vw, 14px);
+        text-shadow: 0 1px 3px #000;
+      }
+      #bars {
+        left: 1.2%;
+        top: 1.8%;
+        width: 25%;
+        min-width: 150px;
+      }
+      .bar {
+        margin-bottom: 0.7vw;
+      }
+      .bar b {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9em;
+      }
+      .bt {
+        height: 0.9vw;
+        min-height: 7px;
+        background: rgba(0, 0, 10, 0.6);
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .bt i {
+        display: block;
+        height: 100%;
+        transition: width 0.2s;
+      }
+      .bar.low {
+        animation: bl 0.7s infinite;
+      }
+      @keyframes bl {
+        50% {
+          opacity: 0.4;
+        }
+      }
+      #info {
+        right: 1.2%;
+        top: 1.8%;
+        width: 30%;
+        min-width: 170px;
+        background: rgba(10, 16, 48, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 0.7vw 1vw;
+      }
+      #info small {
+        color: var(--mut);
+      }
+      #banners {
+        left: 50%;
+        top: 1.8%;
+        transform: translateX(-50%);
+        text-align: center;
+        width: 36%;
+        pointer-events: none;
+      }
+      #banners div {
+        border-radius: 10px;
+        padding: 0.5vw 1vw;
+        margin-bottom: 0.4vw;
+        font-weight: bold;
+        pointer-events: auto;
+      }
+      .wc {
+        background: rgba(150, 20, 45, 0.92);
+        animation: bl 0.6s infinite;
+      }
+      .ww {
+        background: rgba(120, 90, 10, 0.92);
+      }
+      #banners button {
+        margin-left: 6px;
+        padding: 3px 8px;
+        font-size: 0.9em;
+      }
+      #toast {
+        left: 50%;
+        bottom: 15%;
+        transform: translateX(-50%);
+        width: 60%;
+        text-align: center;
+      }
+      #toast div {
+        background: rgba(10, 16, 48, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 10px;
+        padding: 0.5vw 1vw;
+        margin-top: 0.3vw;
+      }
+      #bar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 0.6% 1%;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        justify-content: center;
+        background: linear-gradient(transparent, rgba(3, 6, 24, 0.95) 40%);
+      }
+      #bar button {
+        font-size: clamp(10px, 1.4vw, 14px);
+        padding: 0.6vw 0.9vw;
+      }
+      #pal {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 8.5%;
+        display: none;
+        gap: 5px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0 2%;
+      }
+      #pal.on {
+        display: flex;
+      }
+      #pal button {
+        background: var(--card2);
+        color: var(--txt);
+        font-size: clamp(9px, 1.2vw, 12px);
+        padding: 0.4vw 0.7vw;
+        text-align: left;
+        line-height: 1.2;
+      }
+      #pal button.on {
+        outline: 3px solid var(--acc);
+        background: #2d3a85;
+      }
+      #pal small {
+        display: block;
+        color: var(--mut);
+        font-weight: normal;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(3, 6, 24, 0.92);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 2%;
+        z-index: 10;
+      }
+      .overlay.on {
+        display: flex;
+      }
+      .modal {
+        background: var(--card);
+        border-radius: 16px;
+        max-width: 860px;
+        width: 100%;
+        max-height: 96%;
+        overflow: auto;
+        padding: 16px 18px;
+        font-size: clamp(11px, 1.6vw, 15px);
+      }
+      .modal h2 {
+        margin: 0 0 8px;
+      }
+      .modal li {
+        margin: 5px 0;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        background: var(--card2);
+        border-radius: 10px;
+        padding: 7px 10px;
+        margin: 5px 0;
+      }
+      .row small {
+        color: var(--mut);
+        display: block;
+      }
+      .tabs {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .inv {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .inv span {
+        background: var(--card2);
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 0.9em;
+      }
+      .sw {
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        margin: 3px;
+        border: 3px solid transparent;
+        cursor: pointer;
+        vertical-align: middle;
+      }
+      .sw.on {
+        border-color: #fff;
+      }
+      input[type="text"] {
+        font: inherit;
+        background: var(--card2);
+        color: var(--txt);
+        border: 0;
+        border-radius: 8px;
+        padding: 7px;
+        width: 180px;
+      }
+      .real {
+        background: #0a0e2a;
+        border-left: 4px solid var(--blue);
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin: 10px 0;
+        color: var(--mut);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+      }
+      td,
+      th {
+        padding: 5px 7px;
+        border-bottom: 1px solid #2b3680;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--warn);
+      }
+      a {
+        color: #8fd3ff;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .no {
+        color: var(--bad);
+      }
+      #mgBox {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 12px;
+        max-width: 700px;
+        width: 100%;
+      }
+      #mg {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 10px;
+        background: #0a0e2a;
+        touch-action: none;
+      }
+      .plan {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 12px;
+      }
+      .pc {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        background: var(--card2);
+        border-radius: 10px;
+        padding: 7px 10px;
+        margin: 5px 0;
+        cursor: pointer;
+        border: 2px solid transparent;
+      }
+      .pc.sel {
+        border-color: var(--ok);
+        background: #243a6a;
+      }
+      .pc.lock {
+        opacity: 0.85;
+        cursor: default;
+        border-color: #3a4685;
+      }
+      .pc small {
+        display: block;
+        color: var(--mut);
+      }
+      .pc .kg {
+        margin-left: auto;
+        white-space: nowrap;
+        color: var(--warn);
+        font-weight: bold;
+      }
+      .sum {
+        background: #0a0e2a;
+        border-radius: 12px;
+        padding: 10px;
+        position: sticky;
+        top: 0;
+      }
+      .massbar {
+        height: 16px;
+        background: #12183f;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 6px 0;
+      }
+      .massbar i {
+        display: block;
+        height: 100%;
+      }
+      .sum div.l {
+        display: flex;
+        justify-content: space-between;
+        margin: 3px 0;
+      }
+      .catgrid h3 {
+        margin: 10px 0 2px;
+        color: var(--warn);
+      }
+      @media (max-width: 820px) {
+        .plan {
+          grid-template-columns: 1fr;
+        }
+      }
 
-<div class="overlay on" id="ovIntro"><div class="modal">
-<h2>🌙 Lunar Base Junior</h2>
-<p>You are <b>Mira</b>, a junior astronaut on your very first mission. Your lander <b>Hopper</b> has touched down near the Moon's south pole, at the Shackleton crater rim, where NASA plans to land humans with Artemis. Mission Control is counting on you.</p>
-<p>Over six short chapters you will explore a lunar surface that is different every time, mine ore and ice, refine oxygen, craft radiation shielding, and face a real solar storm. Every chapter is tied to a real NASA discovery or event.</p>
-<ul>
-<li><b>Life support</b> drains as you breathe. Refill at the lander or refine oxygen.</li>
-<li><b>Hazard protection</b> shields you from cosmic radiation. Solar storms drain it fast. Polymer plates make it stronger.</li>
-<li><b>Suit energy</b> powers your mining beam. It recharges in sunlight and drains in the dark of the cold craters, where the ice is.</li>
-</ul>
-<p style="color:var(--mut)"><b>Controls:</b> WASD or arrows to move, Shift to sprint, hold click or Space to mine, E to scan or use, I for the menu. On a phone: use the joystick and buttons.</p>
-<button id="bGo">🚀 Begin mission</button>
-</div></div>
+      :root {
+        --card: #0a1034;
+        --card2: #13206a;
+        --txt: #eef2ff;
+        --mut: #9fb0ff;
+        --acc: #ff8c1a;
+        --ok: #35c46a;
+        --bad: #ff4d6d;
+        --warn: #ffd23f;
+        --gold: #ffd23f;
+        --teal: #6fe3ff;
+        --pb: #24379f;
+      }
+      html,
+      body {
+        font-family: "VT323", "Courier New", monospace;
+      }
+      * {
+        border-radius: 0 !important;
+      }
+      canvas#cv,
+      #mg,
+      .prev,
+      .pix canvas,
+      .ico,
+      .scard canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+      h2,
+      h3,
+      button,
+      .ctitle,
+      .olbl,
+      .clbl,
+      .hud b {
+        font-family: "Press Start 2P", "VT323", monospace;
+        letter-spacing: 0;
+      }
+      .modal {
+        max-width: 1100px;
+        font-size: clamp(15px, 2.1vw, 21px);
+        border: 4px solid var(--pb);
+        box-shadow:
+          0 0 0 4px #000,
+          10px 10px 0 4px rgba(0, 0, 0, 0.55);
+        background: #070b24;
+      }
+      .modal h2 {
+        font-size: 0.8em;
+        color: var(--gold);
+        line-height: 1.5;
+      }
+      .modal h3 {
+        font-size: 0.6em;
+        color: var(--teal);
+        line-height: 1.5;
+      }
+      button {
+        font-size: 0.55em;
+        line-height: 1.4;
+        padding: 9px 10px;
+        border: 3px solid #000;
+        box-shadow:
+          inset -3px -3px 0 rgba(0, 0, 0, 0.35),
+          inset 3px 3px 0 rgba(255, 255, 255, 0.28),
+          3px 3px 0 #000;
+        text-transform: uppercase;
+      }
+      button:hover:not(:disabled) {
+        filter: brightness(1.12);
+      }
+      button:active:not(:disabled) {
+        transform: translate(2px, 2px);
+        box-shadow:
+          inset 3px 3px 0 rgba(0, 0, 0, 0.35),
+          1px 1px 0 #000;
+      }
+      #bar button {
+        font-size: clamp(7px, 0.9vw, 10px);
+      }
+      .hud {
+        font-family: "VT323", monospace;
+        font-size: clamp(13px, 1.9vw, 19px);
+      }
+      .hud b {
+        font-size: 0.6em;
+      }
+      .bt {
+        border: 2px solid #000 !important;
+      }
+      #info {
+        border: 3px solid var(--pb) !important;
+        box-shadow: 0 0 0 3px #000;
+        background: rgba(7, 11, 36, 0.92);
+      }
+      .row,
+      .pc,
+      .sum,
+      .inv span,
+      .lv {
+        border: 3px solid var(--pb);
+      }
+      .overlay {
+        background: rgba(2, 4, 16, 0.94);
+      }
+      #toast div {
+        border: 3px solid var(--pb);
+        box-shadow: 0 0 0 2px #000;
+        background: #070b24;
+      }
+      .wc {
+        background: #9a1a35;
+        border: 3px solid #000;
+      }
+      .ww {
+        background: #8a6a10;
+        border: 3px solid #000;
+      }
+      input[type="text"] {
+        font-family: "VT323", monospace;
+        font-size: 1.1em;
+        border: 3px solid var(--pb);
+        background: #0a1034;
+        color: #fff;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      .pc:focus-visible,
+      .lv:focus-visible {
+        outline: 4px solid var(--gold);
+        outline-offset: 2px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+      .crx {
+        display: grid;
+        grid-template-columns: 250px 1fr 250px;
+        gap: 12px;
+      }
+      .cpanel {
+        border: 4px solid var(--pb);
+        box-shadow: 0 0 0 3px #000;
+        background: #080d2c;
+        padding: 10px;
+        min-width: 0;
+      }
+      .ctitle {
+        font-size: 0.62em;
+        color: #fff;
+        text-align: center;
+        line-height: 1.6;
+      }
+      .ctitle.gold {
+        color: var(--gold);
+        margin: 4px 0 6px;
+      }
+      .csub {
+        color: var(--teal);
+        text-align: center;
+        margin: 4px 0 8px;
+        line-height: 1;
+      }
+      .prev {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 3px solid #000;
+      }
+      .gbtns {
+        display: flex;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .gb {
+        flex: 1;
+        font-size: 0.55em;
+        color: #fff;
+      }
+      .gb.boy {
+        background: #2a6fe0;
+      }
+      .gb.girl {
+        background: #8a3be0;
+      }
+      .gb.on {
+        outline: 3px solid var(--gold);
+        outline-offset: 1px;
+      }
+      .cbox {
+        border: 3px solid var(--pb);
+        padding: 8px;
+        background: #0a1034;
+      }
+      .clbl {
+        font-size: 0.5em;
+        color: #fff;
+        text-align: center;
+        margin-bottom: 8px;
+      }
+      .nrow {
+        display: flex;
+        gap: 6px;
+      }
+      .nrow input {
+        flex: 1;
+        min-width: 0;
+        width: auto;
+      }
+      .dice {
+        background: #d98a1a;
+        padding: 4px 8px;
+        font-size: 0.9em;
+      }
+      .go {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        background: #35c46a;
+        color: #fff;
+        font-size: 0.6em;
+        padding: 14px 8px;
+      }
+      .opt {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 7px 0;
+        border-top: 3px solid #141f63;
+      }
+      .opt:first-child {
+        border-top: 0;
+      }
+      .ico {
+        width: 40px;
+        height: 40px;
+        flex: none;
+        border: 3px solid var(--pb);
+        background: #0a1034;
+      }
+      .ob {
+        flex: 1;
+        min-width: 0;
+      }
+      .olbl {
+        font-size: 0.48em;
+        color: var(--teal);
+        margin: 2px 0 6px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .pix {
+        padding: 2px;
+        width: 50px;
+        height: 50px;
+        background: #0a1034;
+        border: 3px solid #26348f;
+        box-shadow: none;
+      }
+      .pix canvas {
+        width: 40px;
+        height: 40px;
+        display: block;
+      }
+      .pix.on {
+        border-color: var(--gold);
+        background: #1a2470;
+      }
+      .swb {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 3px solid #26348f;
+        box-shadow: none;
+      }
+      .swb.on {
+        border-color: var(--gold);
+        outline: 2px solid #000;
+      }
+      .swb.orig {
+        background: #0a1034;
+        color: var(--gold);
+        font-size: 14px;
+      }
+      .scard {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        margin: 8px 0;
+        padding: 4px;
+        text-align: left;
+        border: 4px solid var(--sc);
+        background: linear-gradient(90deg, var(--sbg), #080d2c 75%);
+        box-shadow: 0 0 0 3px #000;
+        text-transform: none;
+      }
+      .scard canvas {
+        width: 78px;
+        height: 78px;
+        flex: none;
+      }
+      .scard b {
+        display: block;
+        color: var(--sc);
+        font-size: 1em;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+      .scard small {
+        display: block;
+        color: #fff;
+        font-family: "VT323", monospace;
+        font-size: 1.7em;
+        line-height: 1;
+      }
+      .scard.on {
+        background: linear-gradient(90deg, var(--sbg), #080d2c 75%) !important;
+        outline: 3px solid var(--gold);
+        outline-offset: 2px;
+      }
+      .cfoot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        color: var(--teal);
+        flex-wrap: wrap;
+      }
+      .cfoot span {
+        color: var(--mut);
+      }
+      .lvs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .lv {
+        background: #0a1034;
+        padding: 8px;
+        cursor: pointer;
+      }
+      .lv.sel {
+        border-color: var(--gold);
+        background: #16227a;
+      }
+      .lv b {
+        display: block;
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.5em;
+        color: var(--gold);
+        line-height: 1.6;
+        margin-bottom: 4px;
+      }
+      .lv small {
+        color: var(--txt);
+        display: block;
+        line-height: 1.05;
+      }
+      body.hc {
+        --card: #000;
+        --card2: #0e0e26;
+        --txt: #fff;
+        --mut: #fff;
+      }
+      body.hc .modal,
+      body.hc .row,
+      body.hc .pc,
+      body.hc .sum,
+      body.hc #info,
+      body.hc .cpanel {
+        border-color: #fff !important;
+      }
+      body.hc button {
+        border-color: #fff;
+      }
+      body.hc .hud {
+        text-shadow:
+          0 0 3px #000,
+          0 0 3px #000;
+      }
+      body.big .modal {
+        font-size: clamp(17px, 2.4vw, 24px);
+      }
+      body.big .hud {
+        font-size: clamp(15px, 2.2vw, 22px);
+      }
+      body.big #bar button {
+        font-size: clamp(9px, 1.1vw, 12px);
+      }
+      body.rm *,
+      body.rm *::before {
+        animation: none !important;
+        transition: none !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      @media (max-width: 860px) {
+        .crx {
+          grid-template-columns: 1fr;
+        }
+        .lvs {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <div id="stage">
+        <canvas id="cv" width="480" height="270"></canvas>
+        <div class="hud" id="bars"></div>
+        <div class="hud" id="info"></div>
+        <div class="hud" id="banners"></div>
+        <div class="hud" id="toast"></div>
+        <div id="pal"></div>
+        <div id="bar">
+          <button data-a="eat">🍲 Eat</button>
+          <button data-a="sleep">😴 Sleep</button>
+          <button data-a="pet">🤗 Pet</button>
+          <button data-a="missions">🎯 Missions</button>
+          <button data-a="craft">🔧 Craft</button>
+          <button data-a="build" id="bBuild">🧱 Build</button>
+          <button data-a="style">🎨 Style</button>
+          <button data-a="exp">🚀 Expedition</button>
+          <button data-a="a11y" class="alt" aria-label="Accessibility settings">♿ Access</button>
+          <button data-a="wx" class="alt">📡 Space weather</button>
+          <button data-a="story" class="alt">📖 Story</button>
+          <button data-a="snd" class="alt" id="bSnd" aria-label="Toggle sound">🔊</button>
+        </div>
 
-<div class="overlay" id="ovMenu"><div class="modal" id="menuBox"></div></div>
-<div class="overlay" id="ovStory"><div class="modal" id="storyBox"></div></div>
-<div class="overlay" id="ovEnd"><div class="modal" id="endBox"></div></div>
-</div></div>
+        <div id="sr" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+        <div class="overlay on" id="ovTitle"><div class="modal" id="titleBox"></div></div>
+        <div class="overlay" id="ovPlan"><div class="modal" id="planBox"></div></div>
+        <div class="overlay" id="ovMenu"><div class="modal" id="menuBox"></div></div>
+        <div class="overlay" id="ovStory"><div class="modal" id="storyBox"></div></div>
+        <div class="overlay" id="ovMG">
+          <div id="mgBox">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+              "
+            >
+              <b id="mgTitle"></b><button class="alt" id="mgQuit">Give up</button>
+            </div>
+            <canvas id="mg" width="640" height="420"></canvas>
+            <div id="mgHelp" style="color: var(--mut); font-size: 0.85em; margin-top: 6px"></div>
+          </div>
+        </div>
+        <div class="overlay" id="ovEnd"><div class="modal" id="endBox"></div></div>
+      </div>
+    </div>
 
-<script>
-const TS=32,W=960,H=540,CHK=16;
-const $=id=>document.getElementById(id);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const cv=$("cv"),ctx=cv.getContext("2d");
-const DAY=20;
-const GCR=1.37,DLIM=250;
-const ITEMS={
-regolith:{n:"Regolith",c:"#b9bdd0"},
-ilmenite:{n:"Ilmenite",c:"#ff9f45"},
-carbon:{n:"Carbon",c:"#3a3a4a"},
-ice:{n:"Water ice",c:"#6fe3ff"},
-metal:{n:"Metal plate",c:"#cfd6ff"},
-polymer:{n:"Polymer plate",c:"#b388ff"},
-solar:{n:"Solar cell",c:"#2a56d8"}
-};
-const NODEK=[null,"regolith","ilmenite","carbon","ice"];
-const NODEHP=[0,1.2,2,2,2.2];
-const NODEY=[0,3,2,2,2];
-const SELL={regolith:1,ilmenite:3,carbon:3,ice:4};
-const FACTS=[
-{kind:"Ice Crater",fact:"Permanently shadowed craters near the lunar poles never see sunlight. NASA's LRO and the LCROSS impact found water ice in them, with temperatures near -240 °C."},
-{kind:"Sunlit Ridge",fact:"Some peaks near the south pole are lit for most of the year. LRO illumination maps show them as ideal spots for solar power."},
-{kind:"Ilmenite Outcrop",fact:"Oxygen is locked inside lunar minerals like ilmenite. Heating regolith with hydrogen can release it, which is called ISRU: using local resources."},
-{kind:"Boulder Field",fact:"Lunar dust is sharp, electrically charged and sticks to everything. Apollo astronauts found it damaged suits and seals."},
-{kind:"Ancient Rim",fact:"With no atmosphere or magnetic field, the Moon's surface gets about 1.37 mSv of cosmic radiation per day, measured by China's Chang'e-4 lander."},
-{kind:"Landing Candidate",fact:"NASA's Artemis program has picked sites near the south pole for crewed landings, because of nearby ice and long periods of sunlight."},
-{kind:"Hydrogen Plain",fact:"Hydrogen-rich materials like polyethylene shield radiation better than metal, because light atoms stop fast particles without creating as many secondaries."}
-];
-const NAMES=["Aurelia","Borealis","Cinder","Draco","Echo","Ferro","Gale","Halo","Ivory","Jade","Kepler","Lyra","Mira","Nova","Orion","Pyxis"];
-const PAL=[[154,158,181],[198,202,224],[112,117,146],[26,30,62]];
-const FORCED=[{x:18,y:-12,r:9,psr:true},{x:-22,y:15,r:7,psr:false},{x:-6,y:27,r:7,psr:true},{x:30,y:20,r:6,psr:false}];
-const RC=[
-{n:"Refine oxygen from ilmenite",cost:{ilmenite:2},fx:"+60 life support",run(){G.o2=Math.min(100,G.o2+60);G.st.refined++}},
-{n:"Electrolyze water ice",cost:{ice:2},fx:"+40 life support",run(){G.o2=Math.min(100,G.o2+40)}},
-{n:"Smelt a metal plate",cost:{ilmenite:3},fx:"+1 Metal plate",give:{metal:1}},
-{n:"Press a polymer plate",cost:{ice:3,carbon:2},fx:"+1 Polymer plate (hydrogen-rich)",give:{polymer:1}},
-{n:"Assemble a solar cell",cost:{metal:1,carbon:1,regolith:2},fx:"+1 Solar cell",give:{solar:1}}
-];
-const OBJ=[
-{t:"Scan a discovery: walk to a ◆ marker and hold E",ok:()=>G.disc.length>=1,fact:"Every scan is real science. Scientists catalog lunar sites to choose where astronauts will land."},
-{t:"Mine 2 Ilmenite and refine oxygen (Menu → Craft)",ok:()=>G.st.refined>=1,fact:"Refining oxygen from lunar minerals could one day supply a whole base and even rocket fuel."},
-{t:"Find a dark crater, mine ice and carbon, craft a Polymer plate and install it (Menu → Suit)",ok:()=>G.polyL>=1,fact:"Polymers rich in hydrogen are some of the best radiation shields known."},
-{t:"SOLAR STORM incoming! Get inside the lander's shelter and ride it out",ok:()=>G.storm.state===3&&G.stormN>=1,start(){startStorm(1,30,34)}},
-{t:"The lander was hit! Craft 3 Metal plates and 2 Solar cells, then repair it (Terminal)",ok:()=>G.landerOK,fact:"Electronics are vulnerable to energetic particles. Space hardware needs shielding and repairs too."},
-{t:"Build the outpost: Solar Array and Shelter Dome (Terminal → Build)",ok:()=>G.built.solar&&G.built.dome,start(){startStorm(.45,40,26)}}
-];
+    <script src="art/art.js"></script>
+    <script>
+      const W = 960,
+        H = 540,
+        CELL = 56,
+        GX = 32,
+        GY = 84,
+        GC = 16,
+        FLOORY = GY + 6 * CELL;
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const cv = $("cv"),
+        ctx = cv.getContext("2d");
+      ctx.scale(0.5, 0.5);
+      ctx.imageSmoothingEnabled = false;
+      const GCR = 1.37,
+        DLIM = 250;
+      let DAYLEN = 60;
+      const LEVELS = [
+        {
+          id: "a11",
+          n: "Apollo 11",
+          yr: "1969",
+          tag: "Short",
+          days: 8.14,
+          dur: "8 d 3 h 18 min",
+          surf: "21 h 36 min on the lunar surface",
+          crew: "3 astronauts, 2 walked on the Moon",
+          fact: "First crewed Moon landing. Brought back about 21.5 kg of samples.",
+          day: 240,
+          need: 0.85,
+          storm: 0.7,
+        },
+        {
+          id: "a17",
+          n: "Apollo 17",
+          yr: "1972",
+          tag: "Classic",
+          days: 12.58,
+          dur: "12 d 13 h 52 min",
+          surf: "About 75 h on the surface and 22 h of moonwalks",
+          crew: "3 astronauts, 2 on the surface",
+          fact: "The last crewed Moon landing so far. Brought back about 110 kg of samples.",
+          day: 90,
+          need: 1,
+          storm: 1,
+        },
+        {
+          id: "art1",
+          n: "Artemis I",
+          yr: "2022",
+          tag: "Long haul",
+          days: 25.45,
+          dur: "25 d 10 h 53 min",
+          surf: "Orion flew around the Moon without a crew",
+          crew: "Uncrewed test flight for Artemis",
+          fact: "Traveled about 2.25 million km and flew farther than any spacecraft built for humans.",
+          day: 35,
+          need: 1.2,
+          storm: 1.3,
+        },
+      ];
+      function lvNow() {
+        return LEVELS[S.level == null ? 1 : S.level] || LEVELS[1];
+      }
+      function applyLevel() {
+        DAYLEN = S.plan && S.plan.day ? S.plan.day : lvNow().day;
+      }
+      function levelPicker() {
+        return `<h3 style="margin:6px 0 0">Mission level: a real mission and its real duration</h3><div class="lvs">${LEVELS.map(
+          (l, i) =>
+            `<div class="lv ${(S.level == null ? 1 : S.level) === i ? "sel" : ""}" data-lv="${i}" tabindex="0" role="button" aria-pressed="${(S.level == null ? 1 : S.level) === i}"><b>${l.tag}: ${l.n} (${l.yr})</b><small>Real length: <b style="display:inline;font-family:inherit;font-size:1em;color:#fff">${l.dur}</b><br>${l.surf}.<br>${l.crew}.<br>${l.fact}<br><span style="color:var(--teal)">In the game: 1 mission day = ${l.day} s</span></small></div>`,
+        ).join("")}</div>`;
+      }
 
-const STORY=[
-{t:"First Steps",x:"Mira climbs down the ladder of Hopper and leaves her first footprint on the south pole. Mission Control crackles in her ear: \"Find something worth reporting. Scientists back home want to know what is out there.\"",d:"NASA's Lunar Reconnaissance Orbiter has mapped the south pole since 2009. Its maps are how Artemis picked the Shackleton crater rim as a landing region."},
-{t:"Breathing the Moon",x:"Mira's tank is not unlimited, and the nearest oxygen supply is 384,000 km away. Mission Control has an idea: \"The ground itself is full of oxygen. You just have to get it out.\"",d:"Lunar minerals like ilmenite contain oxygen locked in their chemistry. Using local materials like this is called ISRU, and NASA is testing it for Artemis."},
-{t:"Into the Dark",x:"Some craters here have not seen sunlight in billions of years. They are colder than anywhere else in the solar system, and they hold something precious. Mira's suit will struggle in the cold, but she needs the ice and the carbon down there.",d:"In 2009 NASA's LCROSS probe hit a permanently shadowed crater and found water ice in the plume. Temperatures there drop to about -240 °C."},
-{t:"The Storm",x:"An alarm cuts through the radio. The Sun has thrown a huge cloud of charged particles toward the Moon. There is no air and no magnetic field to stop it. Mira has seconds to decide how far she dares to be from the lander.",d:"Solar particle storms like this are tracked by NASA's DONKI database. In August 1972, between Apollo 16 and 17, one of the biggest ever struck. Luckily no astronauts were on the Moon."},
-{t:"Hopper Down",x:"The storm is over, but the lander took a beating. Its computers are failing and the red lights will not stop blinking. If Mira cannot repair it, there is no way home.",d:"Energetic particles can flip bits and burn out electronics. That is why spacecraft use shielding and radiation-hardened parts."},
-{t:"Home Sweet Outpost",x:"A second, smaller wave of radiation is on the way. This time Mira will not just survive, she will build: solar power for the base and a shelter dome made of the polymer she learned to press. This is how a crash site becomes an outpost.",d:"Hydrogen-rich polymers like polyethylene are among the best radiation shields known. NASA studies them, and water walls, for deep space habitats."}
-];
-function showStory(i){
-const s=STORY[i];
-G.paused=true;
-$("storyBox").innerHTML=`<div style="color:var(--mut);font-size:.8em">CHAPTER ${i+1} OF ${STORY.length}</div><h2>${s.t}</h2><p>${s.x}</p><div style="background:#0a0e2a;border-left:4px solid var(--blue);border-radius:8px;padding:8px 10px;margin:10px 0;color:var(--mut)">📡 <b style="color:var(--txt)">Real data:</b> ${s.d}</div><button id="bStory">Continue</button>`;
-$("ovStory").classList.add("on");
-$("bStory").onclick=()=>{$("ovStory").classList.remove("on");G.paused=false;ensureAudio()};
-}
-let G=null;
-let seed=1;
-let audio=null,muted=false;
-const keys={};
-let mineHeld=false,actHeld=false;
-let joy={x:0,y:0};
-const LIVE={ok:false};
+      const SAVEKEY = "lbj_save_v1";
+      function defSave() {
+        return {
+          name: "Mira",
+          suit: "#ff9f45",
+          visor: "#1b2468",
+          acc: 0,
+          skin: -1,
+          hair: 1,
+          hairCol: -1,
+          eyes: -1,
+          outfit: 0,
+          gender: 0,
+          face: 1,
+          eyeS: 1,
+          brows: 0,
+          mouth: 0,
+          art: "toon",
+          char: "hero",
+          lang: "en",
+          level: 1,
+          preset: "classic",
+          inv: { regolith: 0, ilmenite: 0, carbon: 0, ice: 0, metal: 0, polymer: 0, solar: 0 },
+          units: 60,
+          rations: 4,
+          dose: 0,
+          needs: { hunger: 85, energy: 85, mood: 80 },
+          t: 0,
+          blocks: {},
+          ch: -1,
+          flags: {},
+          disc: [],
+          polyL: 0,
+          lootTotal: 0,
+          exp: 0,
+          evac: false,
+          started: false,
+          plan: null,
+          planned: false,
+        };
+      }
+      function loadSave() {
+        try {
+          const r = localStorage.getItem(SAVEKEY);
+          if (r) {
+            const o = JSON.parse(r);
+            return Object.assign(defSave(), o);
+          }
+        } catch (e) {}
+        return defSave();
+      }
+      function writeSave() {
+        try {
+          localStorage.setItem(SAVEKEY, JSON.stringify(S));
+        } catch (e) {}
+      }
+      let S = loadSave();
+      function mod(id) {
+        return S.plan ? !!S.plan.sel[id] : true;
+      }
 
-function hash(x,y,s){
-let n=Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(s|0,1274126177);
-n=Math.imul(n^(n>>>13),1274126177);
-return((n^(n>>>16))>>>0)/4294967296;
-}
-function vnoise(x,y,s){
-const xi=Math.floor(x),yi=Math.floor(y);
-const xf=x-xi,yf=y-yi;
-const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
-const a=hash(xi,yi,s),b=hash(xi+1,yi,s),c=hash(xi,yi+1,s),d=hash(xi+1,yi+1,s);
-return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
-}
+      const SKINS = ["#ffe0c2", "#f6c9a0", "#e0a678", "#c68642", "#8d5524", "#6b3e1f", "#3f2412"];
+      const HAIRC = [
+        "#17141a",
+        "#3b2314",
+        "#7a4a24",
+        "#d9442e",
+        "#ff9a2e",
+        "#ffd23f",
+        "#ff5fa8",
+        "#8a4be0",
+        "#2f6fe0",
+      ];
+      const HAIRN = ["Spiky", "Messy", "Long", "Puff", "Ponytail", "Buns"];
+      const EYEC = [
+        "#4a2a14",
+        "#7a4a24",
+        "#2e8b57",
+        "#2a6fb0",
+        "#1b3a8a",
+        "#14a8c8",
+        "#8a4be0",
+        "#222222",
+      ];
+      const OUTN = ["Flight suit", "Hoodie", "Lab coat", "Striped jumpsuit"];
+      const SUITS = [
+        "#ff9f45",
+        "#4cc9f0",
+        "#7bd88f",
+        "#ff7aa8",
+        "#b388ff",
+        "#ffd166",
+        "#ff5d73",
+        "#e8ecff",
+      ];
+      const VISORS = ["#1b2468", "#0e5e6f", "#6a1b9a", "#3b3b3b", "#8a4b08", "#0b6b3a"];
+      const ACCS = ["None", "Headphones", "Glasses", "Goggles", "Cap", "Bandage", "Star"];
 
-const chunks=new Map();
-function craterList(x0,y0){
-const cs=26;
-const out=FORCED.slice();
-const a=Math.floor((x0-14)/cs),b=Math.floor((x0+CHK+14)/cs);
-const c=Math.floor((y0-14)/cs),d=Math.floor((y0+CHK+14)/cs);
-for(let cx=a;cx<=b;cx++)for(let cy=c;cy<=d;cy++){
-if(hash(cx,cy,seed+11)<.6){
-out.push({x:(cx+hash(cx,cy,seed+12))*cs,y:(cy+hash(cx,cy,seed+13))*cs,r:4+hash(cx,cy,seed+14)*8,psr:false,hr:hash(cx,cy,seed+15)});
-}
-}
-out.forEach(o=>{if(o.hr!==undefined&&o.r>7.5&&o.hr<.7)o.psr=true});
-return out;
-}
-function genChunk(cx,cy){
-const x0=cx*CHK,y0=cy*CHK;
-const cl=craterList(x0,y0);
-const type=new Uint8Array(CHK*CHK),shade=new Uint8Array(CHK*CHK),node=new Uint8Array(CHK*CHK);
-for(let j=0;j<CHK;j++)for(let i=0;i<CHK;i++){
-const tx=x0+i,ty=y0+j;
-let t=0;
-for(let k=0;k<cl.length;k++){
-const o=cl[k];
-const d=Math.hypot(tx-o.x,ty-o.y)/o.r;
-if(d<.85){const v=o.psr?3:2;if(v>t)t=v}
-else if(d<1.15&&t===0)t=1;
-}
-const dl=Math.hypot(tx,ty);
-if(dl<7.5)t=0;
-const n=vnoise(tx*.35,ty*.35,seed+3);
-const sh=clamp(128+(n-.5)*90+(hash(tx,ty,seed+5)-.5)*40,0,255);
-let nd=0;
-if(dl>5){
-const u=hash(tx,ty,seed+21);
-if(t===0){nd=u<.02?1:u<.028?2:0}
-else if(t===1){nd=u<.07?2:u<.1?1:0}
-else if(t===2){nd=u<.05?3:u<.08?1:0}
-else{nd=u<.08?4:u<.11?3:0}
-}
-const idx=j*CHK+i;
-type[idx]=t;shade[idx]=sh;node[idx]=nd;
-}
-return{type,shade,node};
-}
-function chunkAt(cx,cy){
-const k=cx+","+cy;
-let c=chunks.get(k);
-if(!c){c=genChunk(cx,cy);chunks.set(k,c)}
-return c;
-}
-function tileInfo(tx,ty){
-const cx=Math.floor(tx/CHK),cy=Math.floor(ty/CHK);
-const c=chunkAt(cx,cy);
-const i=tx-cx*CHK,j=ty-cy*CHK;
-const idx=j*CHK+i;
-return{t:c.type[idx],s:c.shade[idx],n:c.node[idx]};
-}
-function nodeAlive(tx,ty,n){return n>0&&!G.depl.has(tx+","+ty)}
+      const A = Object.assign(
+        {
+          speed: 1,
+          vol: 1,
+          cap: true,
+          big: false,
+          toggleMine: false,
+          rm: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches),
+          hc: !!(window.matchMedia && matchMedia("(prefers-contrast: more)").matches),
+        },
+        (() => {
+          try {
+            return JSON.parse(localStorage.getItem("lbj_a11y") || "{}");
+          } catch (e) {
+            return {};
+          }
+        })(),
+      );
+      function saveA() {
+        try {
+          localStorage.setItem("lbj_a11y", JSON.stringify(A));
+        } catch (e) {}
+      }
+      function applyA() {
+        document.body.classList.toggle("hc", !!A.hc);
+        document.body.classList.toggle("big", !!A.big);
+        document.body.classList.toggle("rm", !!A.rm);
+      }
+      applyA();
 
-const POIC=42;
-const poiCache=new Map();
-function poiInCell(cx,cy){
-const k=cx+","+cy;
-if(poiCache.has(k))return poiCache.get(k);
-let p=null;
-if(cx===0&&cy===0){
-p={x:11,y:-8,type:1,name:"Aurelia Ridge",key:k};
-}else if(hash(cx,cy,seed+31)<.65){
-const x=(cx+.15+.7*hash(cx,cy,seed+32))*POIC,y=(cy+.15+.7*hash(cx,cy,seed+34))*POIC;
-if(Math.hypot(x,y)>9){
-const type=Math.floor(hash(cx,cy,seed+33)*FACTS.length);
-p={x,y,type,name:NAMES[Math.floor(hash(cx,cy,seed+35)*NAMES.length)]+" "+FACTS[type].kind,key:k};
-}
-}
-poiCache.set(k,p);
-return p;
-}
-function nearPoi(x,y,r){
-const cx=Math.floor(x/POIC),cy=Math.floor(y/POIC);
-let best=null,bd=r;
-for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){
-const p=poiInCell(cx+a,cy+b);
-if(!p)continue;
-const d=Math.hypot(p.x-x,p.y-y);
-if(d<bd){bd=d;best=p}
-}
-return best;
-}
-function nearestUnscanned(x,y){
-const cx=Math.floor(x/POIC),cy=Math.floor(y/POIC);
-let best=null,bd=1e9;
-for(let a=-3;a<=3;a++)for(let b=-3;b<=3;b++){
-const p=poiInCell(cx+a,cy+b);
-if(!p||G.scanned.has(p.key))continue;
-const d=Math.hypot(p.x-x,p.y-y);
-if(d<bd){bd=d;best=p}
-}
-return best;
-}
+      const ITEMS = {
+        regolith: { n: "Regolith", c: "#b9bdd0" },
+        ilmenite: { n: "Ilmenite", c: "#ff9f45" },
+        carbon: { n: "Carbon", c: "#3a3a4a" },
+        ice: { n: "Water ice", c: "#6fe3ff" },
+        metal: { n: "Metal plate", c: "#cfd6ff" },
+        polymer: { n: "Polymer plate", c: "#b388ff" },
+        solar: { n: "Solar cell", c: "#2a56d8" },
+      };
+      const BLK = {
+        brick: { n: "Regolith brick", e: "🧱", cost: { regolith: 2 }, shield: 0.3 },
+        polymer: { n: "Polymer wall", e: "🛡️", cost: { polymer: 1 }, shield: 1 },
+        window: { n: "Window", e: "🪟", cost: { metal: 1, regolith: 1 }, mood: 1.5 },
+        solar: { n: "Solar panel", e: "☀️", cost: { solar: 1 }, ext: true },
+        plant: { n: "Plant box", e: "🌱", cost: { metal: 1, regolith: 3 } },
+        bed: { n: "Extra bunk", e: "🛏️", cost: { metal: 2, regolith: 2 } },
+        lamp: { n: "Lamp", e: "💡", cost: { metal: 1 }, mood: 1 },
+        poster: { n: "Earth poster", e: "🖼️", cost: { units: 15 }, mood: 2 },
+        antenna: { n: "Antenna", e: "📡", cost: { metal: 2, solar: 1 }, ext: true, mood: 1 },
+        flag: { n: "Flag", e: "🚩", cost: { units: 25 }, mood: 3 },
+      };
+      const RC = [
+        {
+          n: "Smelt a metal plate",
+          cost: { ilmenite: 3 },
+          give: { metal: 1 },
+          fx: "+1 Metal plate",
+        },
+        {
+          n: "Press a polymer plate",
+          cost: { ice: 3, carbon: 2 },
+          give: { polymer: 1 },
+          fx: "+1 Polymer plate",
+        },
+        {
+          n: "Assemble a solar cell",
+          cost: { metal: 1, carbon: 1, regolith: 2 },
+          give: { solar: 1 },
+          fx: "+1 Solar cell",
+        },
+        { n: "Make meal packs", cost: { ice: 2 }, rat: 2, fx: "+2 rations" },
+      ];
+      const SHOP = [
+        ["rat", 10, "1 ration"],
+        ["metal", 40, "1 Metal plate"],
+        ["polymer", 60, "1 Polymer plate"],
+        ["solar", 70, "1 Solar cell"],
+      ];
 
-function newGame(){
-seed=Math.floor(Math.random()*1e6);
-chunks.clear();poiCache.clear();
-G={t:0,over:false,paused:true,
-p:{x:2.5,y:2.5,ang:0,vx:0,vy:0},
-inv:{regolith:0,ilmenite:0,carbon:0,ice:0,metal:0,polymer:0,solar:0},cap:30,units:20,
-o2:100,haz:100,hazMax:100,en:100,dose:0,rescues:0,blackout:0,
-polyL:0,obj:0,landerOK:true,landerHP:100,built:{solar:false,dome:false},
-disc:[],scanned:new Set(),depl:new Set(),
-mine:null,scanP:{poi:null,v:0},
-storm:{state:0,t:0,warn:0,dur:0,total:0,label:""},stormN:0,
-toasts:[],parts:[],shake:0,
-st:{refined:0,mined:0,maxDist:0,sprintT:0,peakStormDose:0},
-objT:0
-};
-startObj(0);
-}
-function startObj(i){
-G.objT=G.t;
-if(OBJ[i]&&OBJ[i].start)OBJ[i].start();
-if(i>0)showStory(i);
-}
-function startStorm(f,warn,dur){
-let total=LIVE.ok?clamp(150+LIVE.speed/3000*450,150,600):450;
-let label=LIVE.ok?`real CME ${LIVE.id} (${Math.round(LIVE.speed)} km/s)`:"modeled on the August 1972 storm";
-G.storm={state:1,t:warn,warn,dur,total:total*f,label};
-toast(`☢️ NASA space weather alert: ${label}. Arrival in ${warn} s!`,6000);
-beep(500,.3);
-}
-function toast(msg,ms){
-G.toasts.push({m:msg,t:(ms||4000)/1000});
-}
+      const CAPKG = 7500;
+      const MAND = [
+        {
+          id: "eclss",
+          n: "Life support (ECLSS)",
+          kg: 800,
+          d: "Makes oxygen from water by electrolysis, removes CO₂ and recycles up to 98% of the water, including sweat and urine.",
+        },
+        {
+          id: "power",
+          n: "Power generation and storage",
+          kg: 900,
+          d: "Big solar panels, plus lithium-ion batteries for when the Sun is gone.",
+        },
+        {
+          id: "prop",
+          n: "Propulsion and attitude control",
+          kg: 1200,
+          d: "Engines for the trip and the landing, and to dodge space junk.",
+        },
+        {
+          id: "dock",
+          n: "Docking ports",
+          kg: 300,
+          d: "Hatches for cargo ships and crew capsules to connect.",
+        },
+        {
+          id: "therm",
+          n: "Thermal control",
+          kg: 400,
+          d: "Radiators and fluid loops carry away heat from equipment and the Sun.",
+        },
+        {
+          id: "comms",
+          n: "Comms and command computers",
+          kg: 250,
+          d: "Antennas and computers that keep contact with Mission Control.",
+        },
+        {
+          id: "hyg",
+          n: "Hygiene and sanitation",
+          kg: 150,
+          d: "Vacuum toilet, wet wipes and rinse-free shampoo.",
+        },
+        {
+          id: "emerg",
+          n: "Emergency rations (4 meals)",
+          kg: 40,
+          d: "Dehydrated meals for the trip.",
+          rat: 4,
+        },
+      ];
+      const OPTS = [
+        {
+          id: "lab",
+          n: "Science lab",
+          kg: 600,
+          d: "Scans and samples give +50% units. Studies biology, fluids and materials.",
+        },
+        {
+          id: "airlock",
+          n: "Airlock",
+          kg: 500,
+          d: "Needed to go outside on expeditions. Without it, nobody leaves the base.",
+        },
+        {
+          id: "arm",
+          n: "Robotic arm",
+          kg: 350,
+          d: "Moves heavy modules and helps with repairs: the repair minigame gets 10 more seconds.",
+        },
+        {
+          id: "gym",
+          n: "Gym and exercise area",
+          kg: 450,
+          d: "Treadmill with harness and resistance machines. Without exercise, fatigue builds 30% faster.",
+        },
+        {
+          id: "cupola",
+          n: "Observation cupola",
+          kg: 300,
+          d: "Panoramic windows to Earth. Mood +4.",
+        },
+        {
+          id: "cabins",
+          n: "Private cabins",
+          kg: 400,
+          d: "Sound-proof bunks. Better sleep and mood +3.",
+        },
+        {
+          id: "greenhouse",
+          n: "Space greenhouse",
+          kg: 700,
+          d: "Plant boxes produce 50% more rations and plant care gives +1 ration.",
+        },
+      ];
+      const GEAR = [
+        {
+          id: "food1",
+          n: "Dehydrated and thermostabilized meals",
+          kg: 120,
+          d: "Soups, instant noodles, powdered milk. +6 rations.",
+          rat: 6,
+        },
+        {
+          id: "food2",
+          n: "Tortillas instead of bread",
+          kg: 20,
+          d: "Bread makes crumbs that get into instruments. +2 rations, mood +2.",
+          rat: 2,
+        },
+        {
+          id: "food3",
+          n: "Variety box",
+          kg: 80,
+          d: "Smoked meat, mac and cheese, broccoli au gratin, granola, nuts, chocolate, cookies. +4 rations, mood +3.",
+          rat: 4,
+        },
+        {
+          id: "food4",
+          n: "Condiments and drinks",
+          kg: 40,
+          d: "Hot sauce, mustard, honey, peanut butter, coffee, green tea, lemonade, cocoa. Mood +3.",
+        },
+        {
+          id: "med",
+          n: "Saline and medical kit",
+          kg: 150,
+          d: "Health monitoring and care in flight. Radiation dose -10%.",
+        },
+        {
+          id: "suits",
+          n: "Enhanced EVA suit layer",
+          kg: 250,
+          d: "Pressurized suits with an extra shielding layer. Start with +20 hazard protection.",
+        },
+        {
+          id: "instr",
+          n: "Scientific instruments and computers",
+          kg: 300,
+          d: "Run experiments and collect data. Scanning is 40% faster.",
+        },
+        {
+          id: "personal",
+          n: "Personal and symbolic items",
+          kg: 60,
+          d: "Family photos and a bolt from an old mission. Mood +5.",
+        },
+        {
+          id: "hyg2",
+          n: "Extra hygiene supplies",
+          kg: 40,
+          d: "Swallowable toothpaste and no-bath wipes. Mood +2.",
+        },
+      ];
+      const FOODMOOD = { food2: 2, food3: 3, food4: 3, personal: 5, hyg2: 2, cupola: 4, cabins: 3 };
 
-function invCount(){return Object.values(G.inv).reduce((a,b)=>a+b,0)}
-function canPay(cost){return Object.keys(cost).every(k=>G.inv[k]>=cost[k])}
-function pay(cost){Object.keys(cost).forEach(k=>G.inv[k]-=cost[k])}
-function landerDist(){return Math.hypot(G.p.x-.5,G.p.y-.5)}
-function safeR(){return G.built.dome?8:4.5}
-function inSafe(){return landerDist()<safeR()}
+      const CHAPTERS = [
+        {
+          t: "Arrival",
+          x: 'Hopper Base hums quietly around you. Everything here is new: the bunk, the galley, the tiny console that talks to Mission Control. "Welcome home," the radio says. "Take care of yourself first, astronaut. Eat, sleep, and say hello to your drone."',
+          d: "Astronauts on the ISS follow strict schedules for eating, sleeping and exercise. Looking after the person is as important as looking after the machines.",
+          goal: "Eat a meal, sleep in the bunk and pet your astronaut.",
+          ok: () => S.flags.ate && S.flags.slept && S.flags.petted,
+        },
+        {
+          t: "First Alarm",
+          x: 'A red light starts blinking over the console. Something in the base just failed. Mission Control stays calm: "Open the repair job and reconnect the wires. You can do it."',
+          d: "Space hardware fails. Energetic particles can flip bits and burn out electronics, which is why spacecraft use shielding and radiation-hardened parts.",
+          goal: "Repair the fault (Missions → Repair wires).",
+          ok: () => (S.flags.repaired || 0) >= 1,
+          start() {
+            spawnFault();
+          },
+        },
+        {
+          t: "Over the Ridge",
+          x: "Out there is everything the base needs: ore, ice and carbon. Some of it hides in craters that have not seen the Sun in billions of years. Take the rover out, or drive the dust maze if your ship has no airlock.",
+          d: "In 2009 NASA's LCROSS probe hit a permanently shadowed crater and found water ice. NASA's LRO has mapped the south pole since the same year.",
+          goal: "Bring 6 or more items home (expedition or dust maze).",
+          ok: () => (S.lootTotal || 0) >= 6,
+        },
+        {
+          t: "Walls of Hydrogen",
+          x: 'Mission Control sounds serious. "Space weather is picking up. Radiation is the one thing you cannot see. Build walls that stop it, and craft the polymer to do it."',
+          d: "Hydrogen-rich polymers such as polyethylene are among the best radiation shields known, so NASA studies them for deep space habitats.",
+          goal: "Craft a polymer plate and build a Polymer wall.",
+          ok: () => cnt("polymer") >= 1,
+        },
+        {
+          t: "The Storm",
+          x: "The alarm cuts through the base. The Sun has thrown a huge cloud of charged particles toward the Moon. In forty seconds it arrives. There is no air and no magnetic field to stop it. Use the storm drill to hold the line.",
+          d: "Solar particle storms like this are tracked by NASA's DONKI database. In August 1972, between Apollo 16 and 17, one of the biggest ever struck. Luckily no astronauts were on the Moon.",
+          goal: "Survive the solar storm (play the Storm shield drill).",
+          ok: () => (S.flags.storms || 0) >= 1,
+          start() {
+            startStorm();
+          },
+        },
+        {
+          t: "Outpost",
+          x: "The storm is over and the base is still standing. Now it is time to make it a home: solar power, a window with a view of Earth and an antenna to call your family.",
+          d: "Artemis plans a lasting presence near the lunar south pole, where ice and long periods of sunlight make an outpost possible.",
+          goal: "Build 3 Solar panels, 1 Antenna and 1 Window.",
+          ok: () => cnt("solar") >= 3 && cnt("antenna") >= 1 && cnt("window") >= 1,
+        },
+      ];
 
-function ensureAudio(){
-if(audio||muted)return;
-try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch(e){audio=null}
-}
-function beep(f,d,v){
-if(!audio||muted)return;
-try{
-const o=audio.createOscillator(),g=audio.createGain();
-o.type="square";o.frequency.value=f;g.gain.value=v||.03;
-o.connect(g);g.connect(audio.destination);
-o.start();o.stop(audio.currentTime+d);
-}catch(e){}
-}
-setInterval(()=>{
-if(G&&!G.over&&!G.paused&&!muted&&audio&&(G.storm.state===1||G.storm.state===2||!G.landerOK)){
-beep(G.storm.state?900:600,.18,.02);
-}
-},700);
+      const R = {
+        x: 228,
+        tx: 228,
+        dir: 1,
+        mode: "idle",
+        mt: 0,
+        act: null,
+        hearts: [],
+        bub: "",
+        bubT: 0,
+        fault: null,
+        faultT: 100,
+        storm: { state: 0, t: 0, total: 0, prot: 0 },
+        petCool: 0,
+        build: false,
+        tool: "brick",
+        hover: null,
+        paused: true,
+        t: 0,
+        plantAcc: 0,
+        cheerAt: -99,
+        cheer: "",
+        lastSave: 0,
+        toasts: [],
+        door: 0,
+        leave: 0,
+        roverX: 900,
+        px: 300,
+        py: 300,
+        dust: Array.from({ length: 16 }, () => ({
+          x: Math.random() * 672,
+          y: Math.random() * 224,
+          s: Math.random() * 8 + 4,
+        })),
+        newStyle: false,
+        storyOpen: false,
+        evac: false,
+      };
+      const LIVE = { ok: false };
+      let audio = null,
+        muted = false;
+      const BEDX = GX + 3 * CELL,
+        GALX = GX + 7 * CELL,
+        CONX = GX + 11 * CELL,
+        DOORX = GX + 13.2 * CELL;
+      const RESV = new Set();
+      [
+        [2, 4],
+        [3, 4],
+        [2, 5],
+        [3, 5],
+        [6, 4],
+        [7, 4],
+        [6, 5],
+        [7, 5],
+        [10, 4],
+        [11, 4],
+        [10, 5],
+        [11, 5],
+        [13, 3],
+        [13, 4],
+        [13, 5],
+      ].forEach((a) => RESV.add(a[0] + "," + a[1]));
 
-function update(dt){
-const p=G.p;
-G.t+=dt;
-let mx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0)+joy.x;
-let my=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)+joy.y;
-const m=Math.hypot(mx,my);
-if(m>1){mx/=m;my/=m}
-const info=tileInfo(Math.floor(p.x),Math.floor(p.y));
-const psr=info.t===3;
-const safe=inSafe();
-const sprint=(keys.shift)&&G.en>5&&m>.1;
-const sp=(sprint?5.6:3.3)*(info.t===2||info.t===3?.9:1);
-p.x+=mx*sp*dt;p.y+=my*sp*dt;
-if(m>.1)p.ang=Math.atan2(my,mx);
-if(sprint)G.en-=8*dt;
-G.st.maxDist=Math.max(G.st.maxDist,Math.hypot(p.x,p.y));
+      function isHull(c, r) {
+        return (r === 1 && c >= 1 && c <= 14) || ((c === 1 || c === 14) && r >= 2 && r <= 5);
+      }
+      function cnt(id) {
+        let n = 0;
+        for (const k in S.blocks) if (S.blocks[k] === id) n++;
+        return n;
+      }
+      function shieldVal() {
+        let s = 2;
+        for (const k in S.blocks) {
+          const b = BLK[S.blocks[k]];
+          if (b && b.shield) s += b.shield;
+        }
+        return s;
+      }
+      function decor() {
+        let m = 0;
+        for (const k in S.blocks) {
+          const b = BLK[S.blocks[k]];
+          if (b && b.mood) m += b.mood;
+        }
+        return Math.min(30, m);
+      }
+      function planMood() {
+        let m = 0;
+        if (!S.plan) return 0;
+        Object.keys(FOODMOOD).forEach((k) => {
+          if (S.plan.sel[k]) m += FOODMOOD[k];
+        });
+        return m;
+      }
+      function bedMult() {
+        return Math.min(2, 1 + 0.5 * cnt("bed")) * (S.plan && mod("cabins") ? 1.3 : 1);
+      }
+      function afford(cost) {
+        return Object.keys(cost).every((k) =>
+          k === "units" ? S.units >= cost[k] : S.inv[k] >= cost[k],
+        );
+      }
+      function payCost(cost, sign) {
+        Object.keys(cost).forEach((k) => {
+          if (k === "units") S.units -= sign * cost[k];
+          else S.inv[k] -= sign * cost[k];
+        });
+      }
+      function costTxt(cost) {
+        return Object.keys(cost)
+          .map((k) => cost[k] + " " + (k === "units" ? "units" : ITEMS[k].n))
+          .join(", ");
+      }
 
-let mining=false;
-if((mineHeld||keys[" "])&&G.en>1){
-let target=G.mine?G.mine.n:null;
-if(!target||Math.hypot(target.x+.5-p.x,target.y+.5-p.y)>3.4||!nodeAlive(target.x,target.y,target.k)){
-target=null;
-let bd=3.2;
-const px=Math.floor(p.x),py=Math.floor(p.y);
-for(let j=-3;j<=3;j++)for(let i=-3;i<=3;i++){
-const tx=px+i,ty=py+j;
-const ti=tileInfo(tx,ty);
-if(!nodeAlive(tx,ty,ti.n))continue;
-const d=Math.hypot(tx+.5-p.x,ty+.5-p.y);
-if(d<bd){bd=d;target={x:tx,y:ty,k:ti.n}}
-}
-G.mine=target?{n:target,v:G.mine&&G.mine.n&&G.mine.n.x===target.x&&G.mine.n.y===target.y?G.mine.v:0}:null;
-}
-if(G.mine){
-mining=true;
-G.en-=6*dt;
-G.mine.v+=dt;
-p.ang=Math.atan2(G.mine.n.y+.5-p.y,G.mine.n.x+.5-p.x);
-if(Math.random()<.6)G.parts.push({x:G.mine.n.x+.5,y:G.mine.n.y+.5,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,l:.4,c:ITEMS[NODEK[G.mine.n.k]].c});
-if(G.mine.v>=NODEHP[G.mine.n.k]){
-const k=NODEK[G.mine.n.k];
-const y=NODEY[G.mine.n.k];
-const room=G.cap-invCount();
-if(room<=0){toast("Inventory full! Sell or craft something.",2500)}
-else{
-G.inv[k]+=Math.min(y,room);
-G.st.mined++;
-G.depl.add(G.mine.n.x+","+G.mine.n.y);
-beep(1000,.06);
-toast(`+${Math.min(y,room)} ${ITEMS[k].n}`,1500);
-}
-G.mine=null;
-}
-}
-}else{G.mine=null}
+      function ensureAudio() {
+        if (audio || muted) return;
+        try {
+          audio = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          audio = null;
+        }
+      }
+      function beep(f, d, v) {
+        if (!audio || muted || A.vol <= 0) return;
+        try {
+          const o = audio.createOscillator(),
+            g = audio.createGain();
+          o.type = "square";
+          o.frequency.value = f;
+          g.gain.value = (v || 0.03) * A.vol;
+          o.connect(g);
+          g.connect(audio.destination);
+          o.start();
+          o.stop(audio.currentTime + d);
+        } catch (e) {}
+      }
+      setInterval(() => {
+        const alarm = !R.paused && (R.fault || R.storm.state === 1 || R.storm.state === 2);
+        if (alarm && muted === false && audio) beep(R.storm.state ? 900 : 600, 0.16, 0.02);
+        if (alarm && A.cap && Date.now() - (R.lastCap || 0) > 4500) {
+          R.lastCap = Date.now();
+          R.toasts.push({ m: "🔔 [alarm sounding]", t: 2 });
+        }
+      }, 700);
+      function toast(m, ms) {
+        R.toasts.push({ m, t: (ms || 3500) / 1000 });
+        announce(m);
+      }
 
-if(!mining&&!sprint){
-if(safe)G.en+=(G.built.solar?32:20)*dt;
-else if(psr)G.en-=1.2*dt;
-else G.en+=4*dt;
-}
-G.en=clamp(G.en,0,100);
+      function shade(hex, amt) {
+        const n = parseInt(hex.slice(1), 16);
+        return (
+          "rgb(" +
+          clamp((n >> 16) + amt, 0, 255) +
+          "," +
+          clamp(((n >> 8) & 255) + amt, 0, 255) +
+          "," +
+          clamp((n & 255) + amt, 0, 255) +
+          ")"
+        );
+      }
 
-const lf=G.landerOK?1:.4;
-if(safe){G.o2=Math.min(100,G.o2+30*lf*dt);G.blackout=0}
-else G.o2-=(.55*(sprint?1.5:1))*dt;
-if(G.o2<=0){
-G.o2=0;G.blackout+=dt;
-if(G.blackout>6){rescue("Your oxygen ran out. The crew dragged you back to the lander.")}
-}
+      const OUT = "#1b1030";
+      function announce(m) {
+        const el = document.getElementById("sr");
+        if (!el) return;
+        el.textContent = "";
+        setTimeout(() => {
+          el.textContent = String(m).replace(/<[^>]+>/g, "");
+        }, 40);
+      }
+      const CHARS = ["hero", "classic", "creative", "bold", "nerd", "explorer"];
+      const ACCK = [null, "headphones", "glasses", "goggles", "cap", "bandage", "star"];
+      const AIMG = { ch: {}, lab: {}, acc: {}, row: {}, bust: {} };
+      const ACACHE = {};
+      function img(src) {
+        const im = new Image();
+        im.src = src;
+        return im;
+      }
+      if (typeof ART !== "undefined") {
+        CHARS.forEach((k) => {
+          AIMG.ch[k] = img(ART[k].img);
+          AIMG.lab[k] = img(ART[k].lab);
+          AIMG.bust[k] = img(ART.bust[k]);
+        });
+        Object.keys(ART.acc).forEach((k) => (AIMG.acc[k] = img(ART.acc[k])));
+        Object.keys(ART.row).forEach((k) => (AIMG.row[k] = img(ART.row[k])));
+      }
+      function ready(im) {
+        if (im instanceof HTMLCanvasElement) return true;
+        return !!im && im.complete && im.naturalWidth > 0;
+      }
+      function hexRgb(h) {
+        const n = parseInt(String(h).replace("#", ""), 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+      function charOf(L) {
+        return CHARS.includes(L.char) ? L.char : "hero";
+      }
+      function charCanvas(L) {
+        if (typeof ART === "undefined") return null;
+        const k = charOf(L);
+        const tg = [
+          null,
+          L.skin >= 0 && SKINS[L.skin] ? hexRgb(SKINS[L.skin]) : null,
+          L.hairCol >= 0 && HAIRC[L.hairCol] ? hexRgb(HAIRC[L.hairCol]) : null,
+          L.eyes >= 0 && EYEC[L.eyes] ? hexRgb(EYEC[L.eyes]) : null,
+          L.suit ? hexRgb(L.suit) : null,
+        ];
+        const key = [k, L.skin, L.hairCol, L.eyes, L.suit, L.acc].join("|");
+        if (ACACHE[key]) return ACACHE[key];
+        const base = AIMG.ch[k],
+          lab = AIMG.lab[k],
+          meta = ART[k];
+        if (!ready(base) || !ready(lab)) return null;
+        const accN = ACCK[L.acc] || null;
+        if (accN && !ready(AIMG.acc[accN])) return null;
+        const MX = 30,
+          MT = 50;
+        const cv2 = document.createElement("canvas");
+        cv2.width = meta.w + MX * 2;
+        cv2.height = meta.h + MT;
+        const g = cv2.getContext("2d");
+        const t1 = document.createElement("canvas");
+        t1.width = meta.w;
+        t1.height = meta.h;
+        const g1 = t1.getContext("2d");
+        g1.drawImage(base, 0, 0);
+        const px = g1.getImageData(0, 0, meta.w, meta.h);
+        g1.clearRect(0, 0, meta.w, meta.h);
+        g1.drawImage(lab, 0, 0);
+        const lb = g1.getImageData(0, 0, meta.w, meta.h).data;
+        const refs = [0, meta.ref.skin, meta.ref.hair, meta.ref.iris, meta.ref.trim];
+        const d = px.data;
+        for (let p = 0; p < d.length; p += 4) {
+          const li = Math.round(lb[p] / 60);
+          if (!li || !tg[li] || !d[p + 3]) continue;
+          const T = tg[li];
+          const lum = d[p] * 0.3 + d[p + 1] * 0.59 + d[p + 2] * 0.11;
+          const f = lum / Math.max(refs[li], 1);
+          for (let c = 0; c < 3; c++) {
+            const v = f <= 1 ? T[c] * f : T[c] + (255 - T[c]) * Math.min(1, (f - 1) * 0.8);
+            d[p + c] = Math.max(0, Math.min(255, Math.round(v)));
+          }
+        }
+        g1.putImageData(px, 0, 0);
+        g.imageSmoothingEnabled = false;
+        g.drawImage(t1, MX, MT);
+        if (accN) {
+          const a = AIMG.acc[accN];
+          const ex = meta.ex + MX,
+            ey = meta.ey + MT,
+            dd = meta.d;
+          const put = (w, cx, cy) => {
+            const h = (w * a.naturalHeight) / a.naturalWidth;
+            g.drawImage(
+              a,
+              Math.round(cx - w / 2),
+              Math.round(cy - h / 2),
+              Math.round(w),
+              Math.round(h),
+            );
+          };
+          const w0 = {
+            headphones: 2.5 * dd,
+            glasses: 1.75 * dd,
+            goggles: 1.95 * dd,
+            cap: 2.1 * dd,
+            bandage: 0.6 * dd,
+            star: 0.5 * dd,
+          }[accN];
+          const hh = (w0 * a.naturalHeight) / a.naturalWidth;
+          if (accN === "headphones") put(w0, ex, ey + 0.35 * dd - hh / 2);
+          else if (accN === "glasses") put(w0, ex, ey + 0.02 * dd);
+          else if (accN === "goggles") put(w0, ex, ey - 0.02 * dd);
+          else if (accN === "cap") put(w0, ex + 0.1 * dd, ey - 0.55 * dd - hh / 2);
+          else if (accN === "bandage") put(w0, ex - 0.62 * dd, ey + 0.55 * dd);
+          else if (accN === "star") put(w0, ex + 0.9 * dd, ey + 0.5 * dd);
+        }
+        ACACHE[key] = cv2;
+        return cv2;
+      }
+      function drawMira(c, x, y, sc, o) {
+        const cv2 = charCanvas(S);
+        if (!cv2) return;
+        const meta = ART[charOf(S)];
+        const k = o.k || 2;
+        const s2 = (76 * k) / meta.h;
+        const t = o.still ? 0 : R.t;
+        const walking = o.mode === "walk";
+        const fr = Math.floor(t * 8) % 4;
+        const bob = walking ? (fr % 2 ? -2 * k : 0) : 0;
+        const br = walking || o.mode === "sleep" ? 1 : 1 + Math.sin(t * 2.2) * 0.012;
+        c.save();
+        c.imageSmoothingEnabled = s2 < 0.9;
+        c.imageSmoothingQuality = "high";
+        c.translate(Math.round(x), Math.round(y + bob));
+        c.scale((o.dir || 1) * s2, s2 * br);
+        if (walking) c.rotate(fr % 2 ? 0.03 : -0.03);
+        c.drawImage(cv2, -cv2.width / 2, -cv2.height);
+        c.restore();
+      }
 
-const storm=G.storm;
-const active=storm.state===2;
-const shieldF=Math.exp(-G.polyL*.25);
-let hz=0;
-if(!safe){hz=(.22+(active?5:0))*shieldF}
-if(safe){G.haz=Math.min(G.hazMax,G.haz+15*lf*dt)}
-else G.haz=Math.max(0,G.haz-hz*dt);
-const spe=active?storm.total/storm.dur:0;
-let prot=1;
-if(safe)prot=G.built.dome?.04:(G.landerOK?.1:.5);
-else if(G.haz>0)prot=.08;
-const rate=(GCR/DAY+spe)*prot;
-G.dose+=rate*dt;
-if(active)G.st.peakStormDose+=rate*dt;
-if(G.dose>=DLIM)return end(false,"dose");
+      function blockXY(c, r) {
+        return [GX + c * CELL, GY + r * CELL];
+      }
+      function drawBlock(c, id, x, y, t) {
+        c.save();
+        c.translate(x, y);
+        if (id === "brick") {
+          c.fillStyle = "#8f8575";
+          c.fillRect(1, 1, CELL - 2, CELL - 2);
+          c.strokeStyle = "#5c5446";
+          c.lineWidth = 2;
+          c.strokeRect(1, 1, CELL - 2, CELL - 2);
+          c.beginPath();
+          c.moveTo(1, CELL / 2);
+          c.lineTo(CELL - 1, CELL / 2);
+          c.moveTo(CELL / 2, 1);
+          c.lineTo(CELL / 2, CELL / 2);
+          c.moveTo(CELL / 4, CELL / 2);
+          c.lineTo(CELL / 4, CELL - 1);
+          c.stroke();
+        } else if (id === "polymer") {
+          c.fillStyle = "#7b4fd0";
+          c.fillRect(1, 1, CELL - 2, CELL - 2);
+          c.strokeStyle = "#d9c6ff";
+          c.lineWidth = 2;
+          c.strokeRect(5, 5, CELL - 10, CELL - 10);
+          c.fillStyle = "#e8dcff";
+          c.font = "bold 18px sans-serif";
+          c.textAlign = "center";
+          c.fillText("H", CELL / 2, CELL / 2 + 6);
+        } else if (id === "window") {
+          c.fillStyle = "#cfd6ff";
+          c.fillRect(4, 4, CELL - 8, CELL - 8);
+          c.fillStyle = "#04061a";
+          c.fillRect(8, 8, CELL - 16, CELL - 16);
+          c.fillStyle = "#4f8cff";
+          c.beginPath();
+          c.arc(CELL / 2 + 4, CELL / 2, 9, 0, 7);
+          c.fill();
+          c.fillStyle = "#4cd37a";
+          c.beginPath();
+          c.arc(CELL / 2 + 1 + Math.sin(t / 3000) * 3, CELL / 2 - 3, 4, 0, 7);
+          c.fill();
+        } else if (id === "solar") {
+          c.fillStyle = "#cfd6ff";
+          c.fillRect(CELL / 2 - 2, CELL - 14, 4, 14);
+          c.save();
+          c.translate(CELL / 2, CELL - 14);
+          c.rotate(Math.sin(t / 2500) * 0.12);
+          c.fillStyle = "#2a56d8";
+          c.fillRect(-CELL / 2 + 3, -CELL + 22, CELL - 6, CELL - 26);
+          c.strokeStyle = "#9bb4ff";
+          c.lineWidth = 1;
+          for (let i = 1; i < 4; i++) {
+            c.beginPath();
+            c.moveTo(-CELL / 2 + 3 + (i * (CELL - 6)) / 4, -CELL + 22);
+            c.lineTo(-CELL / 2 + 3 + (i * (CELL - 6)) / 4, -4);
+            c.stroke();
+          }
+          c.restore();
+        } else if (id === "plant") {
+          c.fillStyle = "#6b4a2a";
+          c.fillRect(6, CELL - 20, CELL - 12, 20);
+          c.fillStyle = "#3a8a3a";
+          for (let i = 0; i < 3; i++) {
+            c.save();
+            c.translate(14 + i * 14, CELL - 20);
+            c.rotate(Math.sin(t / 500 + i) * 0.12);
+            c.beginPath();
+            c.ellipse(0, -12, 6, 13, 0, 0, 7);
+            c.fill();
+            c.restore();
+          }
+        } else if (id === "bed") {
+          c.fillStyle = "#555b7a";
+          c.fillRect(3, CELL - 22, CELL - 6, 22);
+          c.fillStyle = S.suit;
+          c.fillRect(5, CELL - 30, CELL - 12, 12);
+          c.fillStyle = "#e8ecff";
+          c.fillRect(6, CELL - 34, 16, 8);
+        } else if (id === "lamp") {
+          const g = c.createRadialGradient(CELL / 2, 14, 2, CELL / 2, 14, 40);
+          g.addColorStop(0, "rgba(255,230,140,.55)");
+          g.addColorStop(1, "rgba(255,230,140,0)");
+          c.fillStyle = g;
+          c.fillRect(-20, -20, CELL + 40, CELL + 40);
+          c.fillStyle = "#ffd166";
+          c.beginPath();
+          c.arc(CELL / 2, 14, 7, 0, 7);
+          c.fill();
+          c.strokeStyle = "#cfd6ff";
+          c.lineWidth = 2;
+          c.beginPath();
+          c.moveTo(CELL / 2, 0);
+          c.lineTo(CELL / 2, 7);
+          c.stroke();
+        } else if (id === "poster") {
+          c.fillStyle = "#f5f0e0";
+          c.fillRect(8, 6, CELL - 16, CELL - 12);
+          c.fillStyle = "#1b2468";
+          c.fillRect(11, 9, CELL - 22, CELL - 24);
+          c.fillStyle = "#4f8cff";
+          c.beginPath();
+          c.arc(CELL / 2, CELL / 2 - 3, 8, 0, 7);
+          c.fill();
+        } else if (id === "antenna") {
+          c.strokeStyle = "#cfd6ff";
+          c.lineWidth = 3;
+          c.beginPath();
+          c.moveTo(CELL / 2, CELL);
+          c.lineTo(CELL / 2, 10);
+          c.stroke();
+          c.beginPath();
+          c.arc(CELL / 2, 10, 12, Math.PI * 1.15, Math.PI * 1.85);
+          c.stroke();
+          c.fillStyle = Math.sin(t / 200) > 0 ? "#ff5d73" : "#7a1630";
+          c.beginPath();
+          c.arc(CELL / 2, 8, 3, 0, 7);
+          c.fill();
+        } else if (id === "flag") {
+          c.strokeStyle = "#cfd6ff";
+          c.lineWidth = 3;
+          c.beginPath();
+          c.moveTo(14, CELL);
+          c.lineTo(14, 6);
+          c.stroke();
+          const w = Math.sin(t / 300) * 2;
+          c.fillStyle = "#ff5d73";
+          c.beginPath();
+          c.moveTo(14, 6);
+          c.lineTo(42, 6 + w);
+          c.lineTo(42, 24 + w);
+          c.lineTo(14, 24);
+          c.fill();
+          c.fillStyle = "#fff";
+          c.fillRect(14, 12, 28, 5);
+          c.fillStyle = "#2a56d8";
+          c.fillRect(14, 6, 12, 10);
+        }
+        c.restore();
+      }
 
-if(storm.state===1){
-storm.t-=dt;
-if(storm.t<=0){storm.state=2;storm.t=storm.dur;G.shake=1;toast("☢️ STORM FRONT ARRIVED! Stay in shelter!",4000);}
-}else if(storm.state===2){
-storm.t-=dt;
-if(storm.t<=0){
-storm.state=3;
-G.stormN++;
-if(G.stormN===1){
-G.landerOK=false;G.landerHP=30;
-toast("⚠️ The storm fried the lander's systems. Repair it!",6000);
-}else toast("The aftershock has passed.",3000);
-}
-}
+      function drawDrone(t) {
+        const dx = -R.dir * 50,
+          tx = R.x + dx,
+          ty = FLOORY - 168 + Math.sin(t / 380) * 7;
+        R.px += (tx - R.px) * 0.05;
+        R.py += (ty - R.py) * 0.05;
+        const x = R.px,
+          y = R.py;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.strokeStyle = "rgba(255,255,255,.5)";
+        ctx.lineWidth = 2;
+        const sp = Math.sin(t / 20) * 14;
+        ctx.beginPath();
+        ctx.moveTo(-18 - sp / 2, -14);
+        ctx.lineTo(18 + sp / 2, -14);
+        ctx.stroke();
+        ctx.strokeStyle = "#9aa3c8";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -8);
+        ctx.lineTo(0, -14);
+        ctx.stroke();
+        ctx.fillStyle = "#cfd6ff";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 16, 11, 0, 0, 7);
+        ctx.fill();
+        ctx.fillStyle = "#555b7a";
+        ctx.fillRect(-16, 2, 32, 4);
+        ctx.fillStyle = R.fault ? (Math.sin(t / 120) > 0 ? "#ff5d73" : "#7a1630") : "#4cc9f0";
+        const bl = t % 3500 > 3380;
+        ctx.beginPath();
+        ctx.ellipse(R.dir * 5, -1, 6, bl ? 1 : 6, 0, 0, 7);
+        ctx.fill();
+        ctx.fillStyle = "#04061a";
+        ctx.beginPath();
+        ctx.arc(R.dir * 5 + R.dir * (Math.sin(t / 900) * 1.5), -1, 2, 0, 7);
+        ctx.fill();
+        ctx.restore();
+        if (R.fault) {
+          ctx.fillStyle = "#ff5d73";
+          ctx.font = "bold 18px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("!", x, y - 24);
+        }
+      }
 
-if(actHeld){
-const poi=nearPoi(p.x,p.y,3);
-if(poi&&!G.scanned.has(poi.key)){
-G.scanP.poi=poi;G.scanP.v+=dt/1.6;
-if(G.scanP.v>=1){
-G.scanned.add(poi.key);
-G.disc.push({name:poi.name,fact:FACTS[poi.type].fact,kind:FACTS[poi.type].kind});
-G.units+=60;
-G.scanP.v=0;G.scanP.poi=null;
-beep(1400,.15);
-toast(`🔭 Discovery: ${poi.name} (+60 units). ${FACTS[poi.type].fact}`,8000);
-}
-}else{G.scanP.v=0;G.scanP.poi=null}
-}else{G.scanP.v=Math.max(0,G.scanP.v-dt*2);if(G.scanP.v===0)G.scanP.poi=null}
+      function drawHub(t) {
+        ctx.clearRect(0, 0, W, H);
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, "#02030f");
+        g.addColorStop(0.6, "#0c1235");
+        g.addColorStop(1, "#141a4d");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+        for (let i = 0; i < 80; i++) {
+          const sx = (i * 137.5) % W,
+            sy = (i * 61.3) % 250;
+          ctx.globalAlpha = 0.35 + 0.55 * Math.sin(t / 500 + i);
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(sx, sy, 1.6, 1.6);
+        }
+        ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(860, 46, 25, 0, 7);
+        ctx.clip();
+        ctx.fillStyle = "#2f6fe0";
+        ctx.fillRect(830, 16, 60, 60);
+        ctx.fillStyle = "#4cd37a";
+        for (let k = 0; k < 3; k++) {
+          const cx0 = 860 + (((t / 90 + k * 34) % 100) - 50);
+          ctx.beginPath();
+          ctx.ellipse(cx0, 40 + k * 7, 14, 8, 0, 0, 7);
+          ctx.fill();
+        }
+        ctx.fillStyle = "rgba(255,255,255,.35)";
+        ctx.beginPath();
+        ctx.ellipse(850, 36, 16, 5, 0.3, 0, 7);
+        ctx.fill();
+        const sh = ctx.createRadialGradient(850, 36, 5, 860, 46, 30);
+        sh.addColorStop(0, "rgba(0,0,0,0)");
+        sh.addColorStop(1, "rgba(0,0,20,.6)");
+        ctx.fillStyle = sh;
+        ctx.fillRect(830, 16, 60, 60);
+        ctx.restore();
+        ctx.fillStyle = "#7d819c";
+        ctx.beginPath();
+        ctx.moveTo(0, FLOORY);
+        for (let x = 0; x <= W; x += 48) ctx.lineTo(x, FLOORY - 3 - Math.sin(x / 90) * 3);
+        ctx.lineTo(W, H);
+        ctx.lineTo(0, H);
+        ctx.fill();
+        ctx.fillStyle = "#5d617c";
+        ctx.fillRect(0, FLOORY + 56, W, H);
+        ctx.fillStyle = "rgba(40,44,70,.5)";
+        [
+          [120, FLOORY + 80, 40],
+          [800, FLOORY + 85, 50],
+          [500, FLOORY + 95, 30],
+        ].forEach((a) => {
+          ctx.beginPath();
+          ctx.ellipse(a[0], a[1], a[2] * 1.5, a[2] * 0.4, 0, 0, 7);
+          ctx.fill();
+        });
+        const x0 = GX + 2 * CELL,
+          y0 = GY + 2 * CELL;
+        ctx.fillStyle = "#232c63";
+        ctx.fillRect(x0, y0, 12 * CELL, 4 * CELL);
+        for (let i = 0; i < 12; i++) {
+          ctx.fillStyle = i % 2 ? "rgba(255,255,255,.03)" : "rgba(255,255,255,.015)";
+          ctx.fillRect(x0 + i * CELL, y0, CELL, 4 * CELL);
+        }
+        ctx.fillStyle = "#3b4585";
+        ctx.fillRect(x0, FLOORY - 6, 12 * CELL, 6);
+        ctx.strokeStyle = "#4a5598";
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0 + 12);
+        ctx.lineTo(x0 + 12 * CELL, y0 + 12);
+        ctx.stroke();
+        ctx.fillStyle = "#8fd3ff";
+        for (let i = 0; i < 14; i++) {
+          const px = x0 + ((t * 0.05 + i * 52) % (12 * CELL));
+          ctx.globalAlpha = 0.7;
+          ctx.fillRect(px, y0 + 10, 6, 4);
+        }
+        ctx.globalAlpha = 1;
+        [x0 + 3 * CELL, x0 + 9 * CELL].forEach((fx) => {
+          ctx.fillStyle = "#2a3270";
+          ctx.beginPath();
+          ctx.arc(fx, y0 + 34, 14, 0, 7);
+          ctx.fill();
+          ctx.strokeStyle = "#9aa3c8";
+          ctx.lineWidth = 3;
+          for (let b = 0; b < 3; b++) {
+            const a = t / 90 + b * 2.094;
+            ctx.beginPath();
+            ctx.moveTo(fx, y0 + 34);
+            ctx.lineTo(fx + Math.cos(a) * 12, y0 + 34 + Math.sin(a) * 12);
+            ctx.stroke();
+          }
+        });
+        for (let i = 0; i < 10; i++) {
+          const on = Math.sin(t / 400 + i * 1.7) > 0;
+          ctx.fillStyle = on ? "#7bd88f" : "#244a36";
+          ctx.fillRect(x0 + 20 + i * 58, y0 + 3, 8, 5);
+        }
+        for (let c = 1; c <= 14; c++)
+          for (let r = 1; r <= 5; r++) {
+            if (!isHull(c, r)) continue;
+            const [bx, by] = blockXY(c, r);
+            ctx.fillStyle = "#6f78a8";
+            ctx.fillRect(bx, by, CELL, CELL);
+            ctx.fillStyle = "#5a6392";
+            ctx.fillRect(bx + 2, by + 2, CELL - 4, CELL - 4);
+            ctx.fillStyle = "#8d96c4";
+            [
+              [6, 6],
+              [CELL - 8, 6],
+              [6, CELL - 8],
+              [CELL - 8, CELL - 8],
+            ].forEach((p) => ctx.fillRect(bx + p[0], by + p[1], 3, 3));
+          }
+        const dopen = R.door;
+        const dx0 = GX + 14 * CELL + 6,
+          dy0 = GY + 3 * CELL + 6,
+          dw = CELL - 12,
+          dh = 3 * CELL - 6;
+        ctx.fillStyle = "#04061a";
+        ctx.fillRect(dx0, dy0, dw, dh);
+        ctx.fillStyle = "#ff9f45";
+        ctx.fillRect(dx0, dy0, dw, dh * (1 - dopen));
+        ctx.fillStyle = "#1b2468";
+        ctx.fillRect(dx0 + 6, dy0 + 8, dw - 12, 34 * (1 - dopen));
+        ctx.fillStyle = R.leave > 0 ? "#ff5d73" : Math.sin(t / 300) > 0 ? "#7bd88f" : "#2d6b3f";
+        ctx.beginPath();
+        ctx.arc(dx0 + dw / 2, dy0 - 2, 3, 0, 7);
+        ctx.fill();
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        ctx.fillText("AIRLOCK", GX + 14 * CELL + CELL / 2, GY + 3 * CELL + 62);
+        const bx2 = GX + 2 * CELL + 4,
+          by2 = FLOORY - 60;
+        ctx.fillStyle = "#555b7a";
+        ctx.fillRect(bx2, by2 + 30, 2 * CELL - 8, 30);
+        ctx.fillStyle = "#3a3f5c";
+        ctx.fillRect(bx2, by2 + 56, 6, 8);
+        ctx.fillRect(bx2 + 2 * CELL - 14, by2 + 56, 6, 8);
+        ctx.fillStyle = S.suit;
+        ctx.fillRect(bx2 + 8, by2 + 18, 2 * CELL - 24, 14);
+        ctx.fillStyle = "#e8ecff";
+        ctx.fillRect(bx2 + 10, by2 + 10, 26, 12);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText("BUNK", bx2 + CELL - 4, by2 + 78);
+        const gxx = GX + 6 * CELL + 4;
+        ctx.fillStyle = "#4a5384";
+        ctx.fillRect(gxx, FLOORY - 64, 2 * CELL - 8, 64);
+        ctx.fillStyle = "#cfd6ff";
+        ctx.fillRect(gxx + 4, FLOORY - 60, 36, 56);
+        ctx.fillStyle = "#9aa3c8";
+        ctx.fillRect(gxx + 34, FLOORY - 44, 3, 12);
+        ctx.fillStyle = "#1b2468";
+        ctx.fillRect(gxx + 48, FLOORY - 52, 44, 24);
+        ctx.fillStyle = "#7bd88f";
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText("🍲 " + S.rations, gxx + 70, FLOORY - 35);
+        ctx.fillStyle = Math.sin(t / 700) > 0 ? "#ffd166" : "#6b5410";
+        ctx.beginPath();
+        ctx.arc(gxx + 98, FLOORY - 48, 3, 0, 7);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText("GALLEY", gxx + CELL - 4, FLOORY + 14);
+        const cx2 = GX + 10 * CELL + 4;
+        ctx.fillStyle = "#4a5384";
+        ctx.fillRect(cx2, FLOORY - 40, 2 * CELL - 8, 40);
+        ctx.fillStyle = "#1b2468";
+        ctx.fillRect(cx2 + 6, FLOORY - 92, 2 * CELL - 20, 50);
+        ctx.fillStyle = R.fault ? (Math.sin(t / 120) > 0 ? "#ff5d73" : "#5a1630") : "#103a5a";
+        ctx.fillRect(cx2 + 12, FLOORY - 86, 2 * CELL - 32, 38);
+        if (!R.fault) {
+          ctx.strokeStyle = "#4cc9f0";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let i = 0; i <= 20; i++) {
+            const px = cx2 + 14 + i * 3.6,
+              py = FLOORY - 68 + Math.sin(t / 260 + i * 0.5) * 9 + Math.sin(t / 110 + i) * 3;
+            if (i) ctx.lineTo(px, py);
+            else ctx.moveTo(px, py);
+          }
+          ctx.stroke();
+          ctx.fillStyle = "#7bd88f";
+          ctx.font = "bold 9px sans-serif";
+          ctx.fillText("ONLINE", cx2 + CELL - 8, FLOORY - 52);
+        } else {
+          ctx.fillStyle = "#04061a";
+          ctx.font = "bold 12px sans-serif";
+          ctx.fillText("FAULT", cx2 + CELL - 8, FLOORY - 62);
+        }
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText("CONSOLE", cx2 + CELL - 4, FLOORY + 14);
+        for (const k in S.blocks) {
+          const p = k.split(",").map(Number);
+          const [bx, by] = blockXY(p[0], p[1]);
+          drawBlock(ctx, S.blocks[k], bx, by, t);
+        }
+        ctx.fillStyle = "rgba(200,220,255,.35)";
+        R.dust.forEach((d) => {
+          const dx = (d.x + t * 0.012 * d.s) % (12 * CELL),
+            dy = (d.y + Math.sin(t / 1500 + d.s) * 8 + t * 0.004 * d.s) % (4 * CELL - 10);
+          ctx.fillRect(x0 + dx, y0 + dy + 14, 1.8, 1.8);
+        });
+        const rx = R.roverX;
+        ctx.fillStyle = "#cfd6ff";
+        ctx.beginPath();
+        ctx.roundRect(rx - 22, FLOORY - 24, 44, 14, 5);
+        ctx.fill();
+        ctx.fillStyle = "#555b7a";
+        ctx.beginPath();
+        ctx.arc(rx - 14, FLOORY - 8, 7, 0, 7);
+        ctx.arc(rx + 14, FLOORY - 8, 7, 0, 7);
+        ctx.fill();
+        ctx.fillStyle = "#4cc9f0";
+        ctx.fillRect(rx - 4, FLOORY - 32, 12, 8);
+        if (R.mode === "sleep") {
+          ctx.save();
+          ctx.translate(bx2 + 2 * CELL - 14, by2 + 46);
+          ctx.rotate(-Math.PI / 2);
+          drawMira(ctx, 0, 0, 0.8, { mode: "sleep", dir: 1, k: 1.5 });
+          ctx.restore();
+          ctx.fillStyle = S.suit;
+          ctx.globalAlpha = 0.95;
+          ctx.beginPath();
+          ctx.roundRect(bx2 + 30, by2 + 26, 2 * CELL - 42, 16, 6);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 22px sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText("z", bx2 + 50, by2 - 6 - ((t / 10) % 20));
+          ctx.fillText("Z", bx2 + 66, by2 - 26 - ((t / 12) % 20));
+        } else {
+          const fade = R.leave > 0 ? Math.max(0, R.leave / 1.4) : 1;
+          ctx.globalAlpha = fade;
+          drawMira(ctx, R.x, FLOORY, 0.95, { mode: R.mode, dir: R.dir });
+          ctx.globalAlpha = 1;
+        }
+        drawDrone(t);
+        const day = (S.t % DAYLEN) / DAYLEN;
+        if (day > 0.62) {
+          ctx.fillStyle = `rgba(5,10,45,${Math.min(0.3, (day - 0.62) * 1.2)})`;
+          ctx.fillRect(x0, y0, 12 * CELL, 4 * CELL);
+        }
+        const flick = R.fault && Math.sin(t / 90) > 0.6;
+        if (flick) {
+          ctx.fillStyle = "rgba(0,0,10,.5)";
+          ctx.fillRect(x0, y0, 12 * CELL, 4 * CELL);
+        }
+        if (R.bub && R.bubT > 0 && R.mode !== "sleep") {
+          ctx.font = "bold 13px sans-serif";
+          const w = ctx.measureText(R.bub).width + 22;
+          const bxp = clamp(R.x - w / 2, GX + 2 * CELL, GX + 14 * CELL - w),
+            byp = FLOORY - 206;
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.roundRect(bxp, byp, w, 28, 10);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(R.x - 6, byp + 28);
+          ctx.lineTo(R.x, byp + 38);
+          ctx.lineTo(R.x + 6, byp + 28);
+          ctx.fill();
+          ctx.fillStyle = "#1b2468";
+          ctx.textAlign = "left";
+          ctx.fillText(R.bub, bxp + 11, byp + 19);
+        }
+        R.hearts.forEach((h) => {
+          ctx.globalAlpha = Math.min(1, h.l * 2);
+          ctx.font = "22px serif";
+          ctx.textAlign = "center";
+          ctx.fillText(h.e, h.x, h.y);
+        });
+        ctx.globalAlpha = 1;
+        if (R.build) {
+          ctx.strokeStyle = "rgba(255,255,255,.18)";
+          ctx.lineWidth = 1;
+          for (let r = 0; r <= 7; r++) {
+            ctx.beginPath();
+            ctx.moveTo(GX, GY + r * CELL);
+            ctx.lineTo(GX + GC * CELL, GY + r * CELL);
+            ctx.stroke();
+          }
+          for (let c = 0; c <= GC; c++) {
+            ctx.beginPath();
+            ctx.moveTo(GX + c * CELL, GY);
+            ctx.lineTo(GX + c * CELL, GY + 7 * CELL);
+            ctx.stroke();
+          }
+          if (R.hover) {
+            const [c, r] = R.hover;
+            if (c >= 0 && c < GC && r >= 0 && r < 7) {
+              const [bx, by] = blockXY(c, r);
+              if (R.tool.startsWith("mod:")) {
+                const m = MODS[R.tool];
+                const okm = canPlaceMod(c, r, m).ok;
+                m.cells.forEach((x) => {
+                  const [qx, qy] = blockXY(c + x[0], r + x[1]);
+                  ctx.fillStyle = okm ? "rgba(123,216,143,.35)" : "rgba(255,93,115,.35)";
+                  ctx.fillRect(qx, qy, CELL, CELL);
+                  ctx.globalAlpha = 0.7;
+                  drawBlock(ctx, x[2], qx, qy, t);
+                  ctx.globalAlpha = 1;
+                });
+              } else {
+                const ok = canPlace(c, r, R.tool).ok;
+                ctx.fillStyle = ok ? "rgba(123,216,143,.35)" : "rgba(255,93,115,.35)";
+                ctx.fillRect(bx, by, CELL, CELL);
+                if (R.tool !== "erase") {
+                  ctx.globalAlpha = 0.7;
+                  drawBlock(ctx, R.tool, bx, by, t);
+                  ctx.globalAlpha = 1;
+                }
+              }
+            }
+          }
+        }
+        const st = R.storm;
+        if (st.state === 2) {
+          ctx.fillStyle = "rgba(255,150,30,.12)";
+          ctx.fillRect(0, 0, W, H);
+          ctx.strokeStyle = "rgba(255,210,90,.8)";
+          ctx.lineWidth = 2;
+          for (let i = 0; i < 30; i++) {
+            const sx = (i * 53 + t * 0.1) % W,
+              sy = ((t * 0.8 + i * 41) % GY) * 1.2 + ((i * 17) % GY);
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx - 7, sy + 14);
+            ctx.stroke();
+          }
+        }
+        if (R.fault || st.state === 1) {
+          ctx.fillStyle = `rgba(255,0,40,${0.03 + 0.05 * Math.abs(Math.sin(t / 220))})`;
+          ctx.fillRect(0, 0, W, H);
+        }
+        ctx.textAlign = "left";
+      }
 
-const o=OBJ[G.obj];
-if(o&&o.ok()){
-G.units+=100;
-toast(`✅ Objective complete (+100 units). ${o.fact?o.fact:""}`,7000);
-beep(1200,.2);
-G.obj++;
-if(G.obj>=OBJ.length)return end(true,"win");
-startObj(G.obj);
-}
+      function canPlace(c, r, id) {
+        if (c < 0 || c >= GC || r < 0 || r >= 7) return { ok: false, why: "Outside the map." };
+        if (isHull(c, r)) return { ok: false, why: "That is the hull." };
+        if (RESV.has(c + "," + r))
+          return { ok: false, why: "That space is taken by the furniture." };
+        const key = c + "," + r;
+        if (id === "erase") return { ok: !!S.blocks[key], why: "Nothing to remove." };
+        if (S.blocks[key]) return { ok: false, why: "Occupied. Remove it first." };
+        const b = BLK[id];
+        const exterior = r <= 0 || r === 6 || c <= 0 || c >= 15;
+        const interior = r >= 2 && r <= 5 && c >= 2 && c <= 13;
+        if (b.ext && !exterior) return { ok: false, why: "This one goes outside." };
+        if (!b.ext && !exterior && !interior) return { ok: false, why: "Not here." };
+        if (!b.ext && exterior && id !== "brick" && id !== "polymer")
+          return { ok: false, why: "Build that inside the base." };
+        return { ok: true };
+      }
+      function cellAt(ev) {
+        const r = cv.getBoundingClientRect();
+        const x = ((ev.clientX - r.left) / r.width) * W,
+          y = ((ev.clientY - r.top) / r.height) * H;
+        return { c: Math.floor((x - GX) / CELL), r: Math.floor((y - GY) / CELL), x, y };
+      }
+      cv.addEventListener("pointermove", (e) => {
+        if (R.build) {
+          const p = cellAt(e);
+          R.hover = [p.c, p.r];
+        }
+      });
+      cv.addEventListener("pointerleave", () => {
+        R.hover = null;
+      });
+      cv.addEventListener("pointerdown", (e) => {
+        ensureAudio();
+        if (R.paused) return;
+        const p = cellAt(e);
+        if (R.build) {
+          const { c, r } = p;
+          const key = c + "," + r;
+          if (R.tool === "erase") {
+            if (S.blocks[key] && !RESV.has(key)) {
+              const b = BLK[S.blocks[key]];
+              payCost(b.cost, -1);
+              delete S.blocks[key];
+              beep(500, 0.06);
+              writeSave();
+            }
+            return;
+          }
+          if (R.tool.startsWith("mod:")) {
+            const m = MODS[R.tool];
+            const q = canPlaceMod(c, r, m);
+            if (!q.ok) {
+              toast(q.why, 1800);
+              return;
+            }
+            const cost = modCost(m);
+            if (!afford(cost)) {
+              toast("You need " + costTxt(cost) + ".", 2200);
+              return;
+            }
+            payCost(cost, 1);
+            m.cells.forEach((x) => {
+              S.blocks[c + x[0] + "," + (r + x[1])] = x[2];
+            });
+            beep(900, 0.07);
+            writeSave();
+            return;
+          }
+          const chk = canPlace(c, r, R.tool);
+          if (!chk.ok) {
+            toast(chk.why, 1800);
+            return;
+          }
+          const b = BLK[R.tool];
+          if (!afford(b.cost)) {
+            toast("You need " + costTxt(b.cost) + ".", 2200);
+            return;
+          }
+          payCost(b.cost, 1);
+          S.blocks[key] = R.tool;
+          beep(900, 0.07);
+          writeSave();
+          return;
+        }
+        if (Math.abs(p.x - R.x) < 40 && p.y > FLOORY - 170 && p.y < FLOORY + 10) {
+          doAct("pet");
+          return;
+        }
+        if (p.y > GY + 2 * CELL && p.y < FLOORY + 5) {
+          if (p.x > BEDX - 60 && p.x < BEDX + 60) doAct("sleep");
+          else if (p.x > GALX - 60 && p.x < GALX + 60) doAct("eat");
+          else if (p.x > CONX - 60 && p.x < CONX + 60) doAct("missions");
+          else if (p.x > DOORX - 30) doAct("exp");
+        }
+      });
 
-G.toasts.forEach(t=>t.t-=dt);
-G.toasts=G.toasts.filter(t=>t.t>0).slice(-4);
-G.parts.forEach(q=>{q.x+=q.vx*dt;q.y+=q.vy*dt;q.l-=dt});
-G.parts=G.parts.filter(q=>q.l>0);
-G.shake=Math.max(0,G.shake-dt);
-}
+      function setBub(m, s) {
+        R.bub = m;
+        R.bubT = s || 3;
+      }
+      function doAct(a) {
+        ensureAudio();
+        if (R.paused && a !== "snd") return;
+        if (R.mode === "sleep" || R.mode === "eat" || R.leave > 0) return;
+        if (a === "eat") {
+          R.act = { t: "eat", x: GALX };
+        } else if (a === "sleep") {
+          R.act = { t: "sleep", x: BEDX };
+        } else if (a === "pet") {
+          pet();
+        } else if (a === "missions") {
+          R.act = { t: "missions", x: CONX };
+        } else if (a === "craft") {
+          R.act = { t: "craft", x: CONX };
+        } else if (a === "exp") {
+          if (!mod("airlock")) {
+            toast(
+              "🚪 Your ship has no airlock, so nobody can go outside. Try the dust maze mission instead.",
+              4500,
+            );
+            setBub("No airlock... we can't go out.", 3);
+            return;
+          }
+          R.act = { t: "exp", x: DOORX };
+        } else if (a === "style") {
+          openStyle();
+        } else if (a === "story") {
+          openStory();
+        } else if (a === "a11y") {
+          openA11y();
+        } else if (a === "wx") {
+          openWx();
+        } else if (a === "build") {
+          toggleBuild();
+        } else if (a === "snd") {
+          muted = !muted;
+          $("bSnd").textContent = muted ? "🔇" : "🔊";
+          if (!muted) ensureAudio();
+        }
+        if (R.act && R.build) toggleBuild();
+        if (R.act) R.tx = R.act.x;
+      }
+      function pet() {
+        if (R.petCool > 0) return;
+        R.petCool = 0.9;
+        R.mode = "wave";
+        R.mt = 0.9;
+        S.needs.mood = Math.min(100, S.needs.mood + 6);
+        S.flags.petted = true;
+        S.flags.pets = (S.flags.pets || 0) + 1;
+        for (let i = 0; i < 4; i++)
+          R.hearts.push({
+            x: R.x + rnd(-20, 20),
+            y: FLOORY - 150,
+            vy: -rnd(30, 60),
+            l: 1.2,
+            e: ["❤️", "💛", "✨"][i % 3],
+          });
+        beep(1200, 0.08, 0.02);
+        setBub(
+          ["Hehe, that tickles!", "You're the best!", "Hello, friend!"][
+            Math.floor(Math.random() * 3)
+          ],
+          2,
+        );
+      }
+      function arrive(a) {
+        if (a.t === "eat") {
+          if (S.rations <= 0) {
+            toast("No rations left! Grow plants, craft meal packs or buy rations in Craft.", 3500);
+            setBub("I'm out of food...", 3);
+            return;
+          }
+          S.rations--;
+          R.mode = "eat";
+          R.mt = 1.6;
+        } else if (a.t === "sleep") {
+          R.mode = "sleep";
+          R.mt = 6;
+        } else if (a.t === "missions") {
+          openMissions();
+        } else if (a.t === "craft") {
+          openCraft();
+        } else if (a.t === "exp") {
+          R.leave = 1.4;
+          writeSave();
+          toast("Cycling the airlock...", 1500);
+        }
+      }
+      function goExpedition() {
+        writeSave();
+        location.href = "expedition.html";
+      }
 
-function rescue(msg){
-G.rescues++;
-toast(`🚑 ${msg} (${G.rescues}/3 rescues used)`,6000);
-if(G.rescues>=3)return end(false,"rescues");
-G.p.x=2.5;G.p.y=2.5;G.o2=70;G.blackout=0;
-let lost=0;
-Object.keys(G.inv).forEach(k=>{const l=Math.floor(G.inv[k]*.4);G.inv[k]-=l;lost+=l});
-G.units=Math.floor(G.units*.8);
-}
+      function toggleBuild() {
+        R.build = !R.build;
+        $("bBuild").className = R.build ? "on" : "";
+        $("pal").className = R.build ? "on" : "";
+        if (R.build) buildPalette();
+      }
+      function buildPalette() {
+        $("pal").innerHTML =
+          Object.keys(BLK)
+            .map(
+              (k) =>
+                `<button data-tool="${k}" class="${R.tool === k ? "on" : ""}">${BLK[k].e} ${BLK[k].n}<small>${costTxt(BLK[k].cost)}</small></button>`,
+            )
+            .join("") +
+          Object.keys(MODS)
+            .map(
+              (k) =>
+                `<button data-tool="${k}" class="${R.tool === k ? "on" : ""}">${MODS[k].e} Module: ${MODS[k].n}<small>${costTxt(modCost(MODS[k]))}</small></button>`,
+            )
+            .join("") +
+          `<button data-tool="erase" class="${R.tool === "erase" ? "on" : ""}">🧽 Remove<small>refunds the cost</small></button>`;
+      }
+      $("pal").onclick = (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        R.tool = b.dataset.tool;
+        buildPalette();
+      };
 
-function px2(c){return"rgb("+c[0]+","+c[1]+","+c[2]+")"}
-function draw(t){
-const p=G.p;
-const sh=G.shake>0?(Math.random()-.5)*8*G.shake:0;
-const camx=p.x*TS-W/2+sh,camy=p.y*TS-H/2+sh;
-ctx.fillStyle="#0a0c1c";ctx.fillRect(0,0,W,H);
-const x0=Math.floor(camx/TS),x1=Math.floor((camx+W)/TS);
-const y0=Math.floor(camy/TS),y1=Math.floor((camy+H)/TS);
-for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){
-const ti=tileInfo(tx,ty);
-const c=PAL[ti.t];
-const k=.75+.5*ti.s/255;
-ctx.fillStyle=`rgb(${Math.min(255,c[0]*k)|0},${Math.min(255,c[1]*k)|0},${Math.min(255,c[2]*k)|0})`;
-ctx.fillRect(tx*TS-camx,ty*TS-camy,TS+1,TS+1);
-}
-for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){
-const ti=tileInfo(tx,ty);
-if(!nodeAlive(tx,ty,ti.n))continue;
-const sx=tx*TS-camx+TS/2+(hash(tx,ty,9)-.5)*8,sy=ty*TS-camy+TS/2+(hash(tx,ty,10)-.5)*8;
-drawNode(ti.n,sx,sy,t);
-}
-const lx=.5*TS-camx,ly=.5*TS-camy;
-const sr=safeR()*TS;
-ctx.strokeStyle=G.built.dome?"rgba(123,216,143,.6)":"rgba(111,227,255,.25)";
-ctx.lineWidth=G.built.dome?4:2;
-ctx.setLineDash([8,8]);
-ctx.beginPath();ctx.arc(lx,ly,sr,0,7);ctx.stroke();ctx.setLineDash([]);
-if(G.built.dome){ctx.fillStyle="rgba(120,230,160,.08)";ctx.beginPath();ctx.arc(lx,ly,sr,0,7);ctx.fill()}
-if(G.built.solar){
-for(let i=0;i<3;i++){
-ctx.fillStyle="#2a56d8";ctx.fillRect(lx-110+i*36,ly-80,30,22);
-ctx.strokeStyle="#9bb4ff";ctx.strokeRect(lx-110+i*36,ly-80,30,22);
-}
-}
-ctx.fillStyle="#d9dcec";
-ctx.beginPath();ctx.arc(lx,ly,28,0,7);ctx.fill();
-ctx.fillStyle="#8f95b8";
-for(let a=0;a<4;a++){
-const ang=a*Math.PI/2+Math.PI/4;
-ctx.beginPath();ctx.moveTo(lx+Math.cos(ang)*22,ly+Math.sin(ang)*22);ctx.lineTo(lx+Math.cos(ang)*44,ly+Math.sin(ang)*44);ctx.lineWidth=5;ctx.strokeStyle="#8f95b8";ctx.stroke();
-}
-ctx.fillStyle=G.landerOK?"#7bd88f":`rgba(255,60,60,${.4+.6*Math.abs(Math.sin(t/180))})`;
-ctx.beginPath();ctx.arc(lx,ly,9,0,7);ctx.fill();
-ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";
-ctx.fillText("HOPPER",lx,ly+44);
+      function spawnFault() {
+        const F = [
+          { k: "power", t: "Power regulator fault", fx: "Lights flicker and the batteries drain." },
+          { k: "air", t: "CO₂ scrubber jam", fx: "The air gets stale." },
+          { k: "water", t: "Water pump leak", fx: "Water pressure drops." },
+        ];
+        if (R.fault) return;
+        R.fault = F[Math.floor(Math.random() * F.length)];
+        R.faultT = rnd(90, 140);
+        toast("🔧 FAULT: " + R.fault.t + ". " + R.fault.fx, 5000);
+        beep(300, 0.4);
+      }
+      function startStorm() {
+        const total =
+          (LIVE.ok ? clamp(150 + (LIVE.speed / 3000) * 450, 150, 600) : 450) *
+          0.5 *
+          (S.plan && S.plan.storm ? S.plan.storm : 1);
+        R.storm = {
+          state: 1,
+          t: 45,
+          total,
+          prot: 0,
+          drilled: false,
+          label: LIVE.ok
+            ? `real CME ${LIVE.id} (${Math.round(LIVE.speed)} km/s)`
+            : "modeled on the August 1972 storm",
+        };
+        toast("☢️ NASA space weather alert: " + R.storm.label + ". Arrives in 45 s!", 6000);
+        beep(500, 0.3);
+      }
 
-const pcx=Math.floor(p.x/POIC),pcy=Math.floor(p.y/POIC);
-for(let a=-2;a<=2;a++)for(let b=-2;b<=2;b++){
-const poi=poiInCell(pcx+a,pcy+b);
-if(!poi)continue;
-const sx=poi.x*TS-camx,sy=poi.y*TS-camy;
-if(sx<-40||sx>W+40||sy<-40||sy>H+40)continue;
-const done=G.scanned.has(poi.key);
-ctx.save();ctx.translate(sx,sy);
-const pl=1+.15*Math.sin(t/300);
-ctx.scale(pl,pl);
-ctx.fillStyle=done?"rgba(123,216,143,.8)":"rgba(255,220,100,.95)";
-ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(10,0);ctx.lineTo(0,14);ctx.lineTo(-10,0);ctx.closePath();ctx.fill();
-ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
-ctx.restore();
-ctx.fillStyle="#fff";ctx.font="11px sans-serif";ctx.textAlign="center";
-ctx.fillText(poi.name,sx,sy-20);
-}
+      function update(dt) {
+        R.t += dt;
+        if (R.paused) return;
+        const n = S.needs;
+        const fm = R.fault ? 2 : 1;
+        const sleeping = R.mode === "sleep";
+        S.t += dt * (sleeping ? 6 : 1);
+        if (missionLeft() <= 0 && !R.timeUp) {
+          showTimeUp();
+          return;
+        }
+        n.hunger = Math.max(
+          0,
+          n.hunger -
+            0.5 *
+              fm *
+              dt *
+              (sleeping ? 1.5 : 1) *
+              (1.3 - (S.plan ? S.plan.ls : 60) / 200) *
+              (S.plan && S.plan.need ? S.plan.need : 1),
+        );
+        if (sleeping) n.energy = Math.min(100, n.energy + ((70 * bedMult()) / 6) * dt);
+        else
+          n.energy = Math.max(
+            0,
+            n.energy -
+              0.32 *
+                fm *
+                dt *
+                (mod("gym") ? 1 : 1.3) *
+                (1.3 - (S.plan ? S.plan.res : 60) / 200) *
+                (S.plan && S.plan.need ? S.plan.need : 1),
+          );
+        let tgt =
+          45 +
+          decor() +
+          planMood() +
+          (n.hunger > 45 ? 12 : n.hunger < 20 ? -25 : 0) +
+          (n.energy > 45 ? 12 : n.energy < 20 ? -25 : 0) +
+          (R.fault ? -18 : 0) +
+          (cnt("window") ? 4 : 0);
+        n.mood += (tgt - n.mood) * Math.min(1, 0.06 * dt);
+        n.mood = clamp(n.mood, 0, 100);
+        if (!(R.fault && R.fault.k === "power")) {
+          R.plantAcc += ((cnt("plant") * dt) / 80) * (mod("greenhouse") ? 1.5 : 1);
+          while (R.plantAcc >= 1) {
+            R.plantAcc -= 1;
+            S.rations++;
+            toast("🌱 A plant box produced a ration.", 2500);
+          }
+        }
+        S.dose +=
+          (GCR / DAYLEN) *
+          Math.exp(-shieldVal() / 6) *
+          dt *
+          (sleeping ? 6 : 1) *
+          (mod("med") ? 0.9 : 1) *
+          (1.25 - (S.plan ? S.plan.sh : 40) / 200);
+        if (S.dose >= DLIM && !R.evac) {
+          evacuate();
+          return;
+        }
+        R.petCool = Math.max(0, R.petCool - dt);
+        if (!R.fault && S.ch >= 2 && R.storm.state === 0) {
+          R.faultT -= dt;
+          if (R.faultT <= 0) spawnFault();
+        }
+        if (!R.storyOpen) {
+          if (S.ch === 1 && !R.fault && !(S.flags.repaired >= 1)) spawnFault();
+          if (S.ch === 4 && R.storm.state === 0 && !(S.flags.storms >= 1)) startStorm();
+        }
+        const st = R.storm;
+        if (st.state === 1) {
+          st.t -= dt;
+          if (st.t <= 0) {
+            st.state = 2;
+            st.t = 15;
+            toast("☢️ STORM FRONT ARRIVED!", 3000);
+          }
+        } else if (st.state === 2) {
+          st.t -= dt;
+          if (st.t <= 0) {
+            const d =
+              st.total *
+              Math.exp(-shieldVal() / 6) *
+              (1 - 0.6 * st.prot) *
+              (mod("med") ? 0.9 : 1) *
+              (1.25 - (S.plan ? S.plan.sh : 40) / 200);
+            S.dose += d;
+            S.flags.storms = (S.flags.storms || 0) + 1;
+            R.storm = { state: 0, t: 0, total: 0, prot: 0 };
+            toast(`The storm passed. Your walls and drill cut it to ${d.toFixed(0)} mSv.`, 6000);
+          }
+        }
+        if (R.leave > 0) {
+          R.door = Math.min(1, R.door + dt * 2);
+          R.roverX += dt * 40;
+          R.leave -= dt;
+          if (R.leave <= 0) goExpedition();
+        }
+        if (R.mode === "walk" || R.mode === "idle" || R.mode === "wave") {
+          const dx = R.tx - R.x;
+          if (Math.abs(dx) > 3 && R.mode !== "wave") {
+            R.x += Math.sign(dx) * Math.min(130 * dt, Math.abs(dx));
+            R.dir = dx > 0 ? 1 : -1;
+            R.mode = "walk";
+          } else if (R.mode === "walk") {
+            R.mode = "idle";
+            if (R.act) {
+              const a = R.act;
+              R.act = null;
+              arrive(a);
+            }
+          }
+        }
+        if (R.mt > 0) {
+          R.mt -= dt;
+          if (R.mt <= 0) {
+            if (R.mode === "eat") {
+              n.hunger = Math.min(100, n.hunger + 45);
+              n.mood = Math.min(100, n.mood + 3);
+              S.flags.ate = true;
+            }
+            if (R.mode === "sleep") {
+              S.flags.slept = true;
+              n.mood = Math.min(100, n.mood + 5);
+              setBub("Good morning!", 3);
+            }
+            R.mode = "idle";
+          }
+        }
+        if (R.bubT > 0) R.bubT -= dt;
+        else {
+          let m = "";
+          if (n.hunger < 25) m = "I'm starving! 🍲";
+          else if (n.energy < 25) m = "So sleepy... 😴";
+          else if (R.fault) m = "Alarm! Something is broken!";
+          else if (R.storm.state === 1) m = "A storm is coming!";
+          else if (n.mood < 30) m = "I feel down. Pet me?";
+          else if (R.t - R.cheerAt > 14) {
+            R.cheerAt = R.t;
+            m = [
+              "What a view of Earth.",
+              "Let's build something!",
+              "Moon dust everywhere...",
+              "Reporting for duty!",
+            ][Math.floor(Math.random() * 4)];
+          }
+          if (m) setBub(m, 3.5);
+        }
+        R.hearts.forEach((h) => {
+          h.y += h.vy * dt;
+          h.l -= dt;
+        });
+        R.hearts = R.hearts.filter((h) => h.l > 0);
+        R.toasts.forEach((t) => (t.t -= dt));
+        R.toasts = R.toasts.filter((t) => t.t > 0).slice(-3);
+        R.lastSave += dt;
+        if (R.lastSave > 5) {
+          R.lastSave = 0;
+          writeSave();
+        }
+        checkChapter();
+      }
 
-if(G.mine){
-const nx=(G.mine.n.x+.5)*TS-camx,ny=(G.mine.n.y+.5)*TS-camy;
-ctx.strokeStyle=`rgba(120,255,200,${.6+.4*Math.sin(t/60)})`;ctx.lineWidth=3;
-ctx.beginPath();ctx.moveTo(W/2,H/2);ctx.lineTo(nx,ny);ctx.stroke();
-ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=1;ctx.stroke();
-}
-G.parts.forEach(q=>{
-ctx.fillStyle=q.c;ctx.globalAlpha=q.l*2;
-ctx.fillRect(q.x*TS-camx,q.y*TS-camy,3,3);
-});
-ctx.globalAlpha=1;
+      function checkChapter() {
+        if (S.ch < 0 || R.storyOpen) return;
+        if (S.ch >= CHAPTERS.length) return;
+        const c = CHAPTERS[S.ch];
+        if (c.ok()) {
+          S.units += 60;
+          toast("✅ Chapter complete: " + c.t + " (+60 units)", 4000);
+          beep(1200, 0.2);
+          S.ch++;
+          writeSave();
+          if (S.ch < CHAPTERS.length) showChapter(S.ch);
+          else showEnding();
+        }
+      }
+      function showChapter(i) {
+        const c = CHAPTERS[i];
+        R.paused = true;
+        R.storyOpen = true;
+        $("storyBox").innerHTML =
+          `<div style="color:var(--mut);font-size:.8em">CHAPTER ${i + 1} OF ${CHAPTERS.length}</div><h2>${c.t}</h2><p>${c.x}</p><div class="real">📡 <b style="color:var(--txt)">Real data:</b> ${c.d}</div><p><b>Goal:</b> ${c.goal}</p><button id="bCh">Continue</button>`;
+        $("ovStory").classList.add("on");
+        $("bCh").onclick = () => {
+          $("ovStory").classList.remove("on");
+          R.paused = false;
+          R.storyOpen = false;
+          if (c.start) c.start();
+          writeSave();
+        };
+      }
+      function showEnding() {
+        R.paused = true;
+        R.storyOpen = true;
+        $("storyBox").innerHTML =
+          `<h2>🏆 Outpost established!</h2><p>${S.name} did it. The storm is behind you, the base is shielded, solar panels are humming and the antenna is talking to home. Hopper Base is no longer a crash site: it is a place to live.</p><ul><li>📅 Day ${Math.floor(S.t / DAYLEN) + 1}</li><li>🔭 Discoveries: ${S.disc.length}</li><li>☢️ Radiation dose: ${S.dose.toFixed(0)} of ${DLIM} mSv</li><li>🧱 Blocks built: ${Object.keys(S.blocks).length}</li><li>🚀 Expeditions: ${S.exp}</li></ul><div class="real">📡 Every number in this game comes from real NASA data or published mission results. Open Story to see where.</div><button id="bCh">Keep playing</button>`;
+        $("ovStory").classList.add("on");
+        $("bCh").onclick = () => {
+          $("ovStory").classList.remove("on");
+          R.paused = false;
+          R.storyOpen = false;
+        };
+      }
+      function evacuate() {
+        R.evac = true;
+        R.paused = true;
+        $("endBox").innerHTML =
+          `<h2>☢️ ${S.name} was evacuated</h2><p>The radiation dose reached the ${DLIM} mSv limit. Space agencies set limits like this so astronauts stay healthy. More shielding, shorter trips and taking the storm drill seriously would have kept ${S.name} on the Moon.</p><button id="bNew">Start a new mission</button>`;
+        $("ovEnd").classList.add("on");
+        $("bNew").onclick = () => {
+          const keep = {
+            name: S.name,
+            suit: S.suit,
+            visor: S.visor,
+            acc: S.acc,
+            skin: S.skin,
+            hair: S.hair,
+            hairCol: S.hairCol,
+            eyes: S.eyes,
+            outfit: S.outfit,
+          };
+          S = Object.assign(defSave(), keep, { started: true, ch: -1 });
+          writeSave();
+          location.reload();
+        };
+      }
 
-ctx.save();ctx.translate(W/2,H/2);ctx.rotate(p.ang);
-ctx.fillStyle="#cfd6ff";ctx.fillRect(-14,-8,8,16);
-ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,11,0,7);ctx.fill();
-ctx.fillStyle="#1b2468";ctx.beginPath();ctx.ellipse(5,0,5,7,0,0,7);ctx.fill();
-ctx.fillStyle="#ff9f45";ctx.fillRect(-2,-11,4,3);
-ctx.restore();
+      function openModal(html) {
+        R.paused = true;
+        $("menuBox").innerHTML = html;
+        $("ovMenu").classList.add("on");
+      }
+      function closeModal() {
+        R.newStyle = false;
+        $("ovMenu").classList.remove("on");
+        R.paused = false;
+        writeSave();
+      }
+      function invHtml() {
+        return `<div class="inv">${Object.keys(ITEMS)
+          .map(
+            (k) =>
+              `<span style="border-left:4px solid ${ITEMS[k].c}">${ITEMS[k].n}: <b>${S.inv[k]}</b></span>`,
+          )
+          .join("")}<span>🍲 ${S.rations}</span><span>◈ ${S.units}</span></div>`;
+      }
+      function head(title) {
+        return `<div style="display:flex;justify-content:space-between;align-items:center"><h2>${title}</h2><button class="alt" data-m="close">✕ Close</button></div>`;
+      }
 
-const info=tileInfo(Math.floor(p.x),Math.floor(p.y));
-if(info.t===3){
-const g=ctx.createRadialGradient(W/2,H/2,40,W/2,H/2,260);
-g.addColorStop(0,"rgba(0,0,12,0)");g.addColorStop(1,"rgba(0,0,12,.9)");
-ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-}
-if(G.storm.state===2){
-ctx.fillStyle="rgba(255,150,30,.14)";ctx.fillRect(0,0,W,H);
-ctx.strokeStyle="rgba(255,210,90,.8)";ctx.lineWidth=2;
-for(let i=0;i<40;i++){
-const sx=(hash(i,Math.floor(t/50),1)*W),sy=((t*.9+i*37)%H);
-ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx-8,sy+16);ctx.stroke();
-}
-}
-if(G.storm.state===1||(!G.landerOK)||G.o2<20){
-ctx.fillStyle=`rgba(255,0,40,${.04+.07*Math.abs(Math.sin(t/200))})`;ctx.fillRect(0,0,W,H);
-}
-arrow(lx+camx,ly+camy,camx,camy,"#7bd88f","⌂");
-const un=nearestUnscanned(p.x,p.y);
-if(un)arrow(un.x*TS,un.y*TS,camx,camy,"#ffdc64","◆");
-}
-function arrow(wx,wy,camx,camy,col,ch){
-const sx=wx-camx,sy=wy-camy;
-if(sx>30&&sx<W-30&&sy>30&&sy<H-30)return;
-const dx=sx-W/2,dy=sy-H/2;
-const a=Math.atan2(dy,dx);
-const r=Math.min((W/2-24)/Math.abs(Math.cos(a)||.001),(H/2-24)/Math.abs(Math.sin(a)||.001));
-const x=W/2+Math.cos(a)*r,y=H/2+Math.sin(a)*r;
-ctx.save();ctx.translate(x,y);ctx.rotate(a);
-ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(-8,-9);ctx.lineTo(-8,9);ctx.closePath();ctx.fill();
-ctx.restore();
-ctx.fillStyle="#fff";ctx.font="bold 13px sans-serif";ctx.textAlign="center";
-ctx.fillText(ch,x-Math.cos(a)*22,y-Math.sin(a)*22+4);
-}
-function drawNode(n,x,y,t){
-ctx.save();ctx.translate(x,y);
-if(n===1){
-ctx.fillStyle="#d3d6e6";
-ctx.beginPath();ctx.ellipse(0,0,9,6,0,0,7);ctx.fill();
-ctx.fillStyle="#9a9fb8";ctx.beginPath();ctx.ellipse(-3,-1,4,3,0,0,7);ctx.fill();
-}else if(n===2){
-ctx.fillStyle="#ff9f45";
-for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-8+i*7,6);ctx.lineTo(-5+i*7,-8-i*2);ctx.lineTo(-2+i*7,6);ctx.closePath();ctx.fill()}
-}else if(n===3){
-ctx.fillStyle="#2c2c3a";
-ctx.beginPath();ctx.arc(0,0,8,0,7);ctx.fill();
-ctx.fillStyle=`rgba(255,255,255,${.4+.4*Math.sin(t/200)})`;ctx.fillRect(-3,-3,2,2);
-}else{
-ctx.fillStyle="#6fe3ff";
-for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-8+i*7,7);ctx.lineTo(-5+i*7,-10-i);ctx.lineTo(-1+i*7,7);ctx.closePath();ctx.fill()}
-ctx.fillStyle=`rgba(255,255,255,${.5+.4*Math.sin(t/160)})`;ctx.fillRect(-2,-6,2,6);
-}
-ctx.restore();
-}
+      function openMissions() {
+        const f = R.fault;
+        const st = R.storm;
+        openModal(
+          head("🎯 Mission board") +
+            invHtml() +
+            `<div class="row"><div><b>🔧 Repair wires${f ? " (URGENT: " + f.t + ")" : ""}</b><small>${f ? "Reconnect the matching wires before time runs out to fix the fault." : "No fault right now. Practice for +10 units."}</small></div><button data-m="wires">Play</button></div>` +
+            `<div class="row"><div><b>🌱 Plant care</b><small>Keep water, light and nutrients balanced to grow rations. Real crops like Veggie lettuce need the same care.</small></div><button data-m="plant">Play</button></div>` +
+            `<div class="row"><div><b>☢️ Storm shield drill${st.state ? " (LIVE STORM!)" : ""}</b><small>${st.state ? "Block the particles with your polymer shield to cut the real dose." : "Practice for +15 units. In a real storm it cuts your dose by up to 60%."}</small></div><button data-m="storm">${st.state ? "Defend!" : "Practice"}</button></div>` +
+            `<div class="row"><div><b>🚙 Dust maze</b><small>Drive the rover through a lunar maze and collect regolith, ilmenite and ice.</small></div><button data-m="maze">Play</button></div>` +
+            `<div class="row"><div><b>🚀 Surface expedition</b><small>${mod("airlock") ? "Explore the open lunar surface, mine, scan discoveries and bring loot home." : "Your ship has no airlock, so this is locked."}</small></div><button data-m="exp" ${mod("airlock") ? "" : "disabled"}>Go</button></div>`,
+        );
+      }
+      function openCraft() {
+        openModal(
+          head("🔧 Workshop") +
+            invHtml() +
+            RC.map(
+              (r, i) =>
+                `<div class="row"><div><b>${r.n}</b><small>Needs ${costTxt(r.cost)} → ${r.fx}</small></div><button data-craft="${i}" ${afford(r.cost) ? "" : "disabled"}>Craft</button></div>`,
+            ).join("") +
+            `<div class="row"><div><b>Install polymer plate in suit</b><small>Uses 1 Polymer plate. +20 hazard protection on expeditions. Installed: ${S.polyL}/5</small></div><button data-inst="1" ${S.inv.polymer >= 1 && S.polyL < 5 ? "" : "disabled"}>Install</button></div>` +
+            `<h3 style="margin:10px 0 4px">Supply store</h3>` +
+            SHOP.map(
+              (s) =>
+                `<div class="row"><div><b>${s[0] === "rat" ? "Ration" : ITEMS[s[0]].n}</b><small>${s[1]} units · ${s[2]}</small></div><button data-buy="${s[0]}" data-cost="${s[1]}" ${S.units >= s[1] ? "" : "disabled"}>Buy</button></div>`,
+            ).join(""),
+        );
+      }
+      const FACEN = ["Round", "Oval", "Wide", "Heart", "Square", "Long"];
+      const EYESN = ["Big", "Tall", "Sleepy", "Fierce", "Sparkly", "Dots"];
+      const BROWN = ["Thick", "Thin", "Cool", "Arch", "Unibrow"];
+      const MOUTHN = ["Smile", "Smirk", "Tongue", "Grin", "Line", "Oh!"];
+      const NAMES_LIST = [
+        "Davi",
+        "Luna",
+        "Zeca",
+        "Clara",
+        "Igor",
+        "Pedro",
+        "Mila",
+        "Caio",
+        "Julia",
+        "Leo",
+        "Rafa",
+        "Nina",
+        "Bento",
+        "Lia",
+        "Teo",
+      ];
+      const CHARN = {
+        en: ["Curly", "Spiky", "Wild blue", "Pink punk", "Beanie", "Long blonde"],
+        pt: ["Cacheado", "Espetado", "Azul rebelde", "Rosa punk", "Gorro", "Loiro longo"],
+      };
+      const TXT = {
+        en: {
+          title: "CUSTOMIZE YOUR ASTRONAUT",
+          sub: "Create your character and join the adventure!",
+          boy: "BOY",
+          girl: "GIRL",
+          name: "ASTRONAUT NAME",
+          ph: "Type your name...",
+          go: "READY! LET'S PLAY!",
+          skin: "SKIN TONE",
+          face: "FACE SHAPE",
+          hair: "HAIR",
+          hairCol: "HAIR COLOR",
+          eyeS: "EYE SHAPE",
+          eyes: "EYE COLOR",
+          brows: "EYEBROWS",
+          mouth: "MOUTH",
+          acc: "ACCESSORIES",
+          outfit: "OUTFIT",
+          suit: "SUIT COLOR",
+          style: "CHOOSE YOUR STYLE!",
+          foot: "Mix everything you like and create a unique astronaut!",
+          orig: "Original colors from the art",
+        },
+        pt: {
+          title: "PERSONALIZE SEU ASTRONAUTA",
+          sub: "Crie seu personagem e embarque nessa aventura!",
+          boy: "MENINO",
+          girl: "MENINA",
+          name: "NOME DO ASTRONAUTA",
+          ph: "Digite seu nome...",
+          go: "PRONTO! VAMOS JOGAR!",
+          skin: "TOM DE PELE",
+          face: "FORMATO DO ROSTO",
+          hair: "CABELO",
+          hairCol: "COR DO CABELO",
+          eyeS: "FORMATO DOS OLHOS",
+          eyes: "COR DOS OLHOS",
+          brows: "SOBRANCELHA",
+          mouth: "BOCA",
+          acc: "ACESSÓRIOS",
+          outfit: "UNIFORME",
+          suit: "COR DO TRAJE",
+          style: "ESCOLHA SEU ESTILO!",
+          foot: "Misture tudo como quiser e crie um astronauta único!",
+          orig: "Cores originais da arte",
+        },
+      };
+      function tx(k) {
+        return TXT[S.lang === "pt" ? "pt" : "en"][k];
+      }
+      const PRESETS = {
+        classic: {
+          n: { en: "Classic", pt: "Clássico" },
+          d: { en: "Balanced and adventurous", pt: "Equilibrado e aventureiro" },
+          c: "#a066ff",
+          bg: "#2a1a5e",
+          look: {
+            char: "classic",
+            skin: -1,
+            hairCol: -1,
+            eyes: -1,
+            acc: 0,
+            suit: "#ff9f45",
+            gender: 0,
+          },
+        },
+        creative: {
+          n: { en: "Creative", pt: "Criativo" },
+          d: { en: "Colorful and imaginative", pt: "Colorido e imaginativo" },
+          c: "#4a9cff",
+          bg: "#13306e",
+          look: {
+            char: "creative",
+            skin: -1,
+            hairCol: -1,
+            eyes: -1,
+            acc: 0,
+            suit: "#14a8c8",
+            gender: 0,
+          },
+        },
+        bold: {
+          n: { en: "Bold", pt: "Ousado" },
+          d: { en: "Fun and full of attitude", pt: "Divertido e cheio de atitude" },
+          c: "#ff5fa8",
+          bg: "#5e1640",
+          look: {
+            char: "bold",
+            skin: -1,
+            hairCol: -1,
+            eyes: -1,
+            acc: 0,
+            suit: "#ff5fa8",
+            gender: 1,
+          },
+        },
+        nerd: {
+          n: { en: "Nerd", pt: "Nerd" },
+          d: { en: "Smart and curious", pt: "Inteligente e curioso" },
+          c: "#35c46a",
+          bg: "#123e2a",
+          look: {
+            char: "nerd",
+            skin: -1,
+            hairCol: -1,
+            eyes: -1,
+            acc: 0,
+            suit: "#7bd88f",
+            gender: 0,
+          },
+        },
+        explorer: {
+          n: { en: "Explorer", pt: "Explorador" },
+          d: { en: "Brave and determined", pt: "Corajoso e destemido" },
+          c: "#ffc83a",
+          bg: "#4e3810",
+          look: {
+            char: "explorer",
+            skin: -1,
+            hairCol: -1,
+            eyes: -1,
+            acc: 0,
+            suit: "#ffd166",
+            gender: 1,
+          },
+        },
+      };
+      function openStyle() {
+        const lang = S.lang === "pt" ? "pt" : "en";
+        const pix = (key, names) =>
+          names
+            .map(
+              (nm, i) =>
+                `<button class="pix ${S[key] === (key === "char" ? CHARS[i] : i) ? "on" : ""}" aria-pressed="${S[key] === (key === "char" ? CHARS[i] : i)}" aria-label="${nm}" title="${nm}" data-k="${key}" data-v="${key === "char" ? CHARS[i] : i}"><canvas data-ic="${key}:${key === "char" ? CHARS[i] : i}" width="40" height="40"></canvas></button>`,
+            )
+            .join("");
+        const sw = (arr, key) =>
+          arr
+            .map(
+              (c, i) =>
+                `<button class="swb ${S[key] === i ? "on" : ""}" aria-pressed="${S[key] === i}" aria-label="${tx(key)} ${i + 1}" data-k="${key}" data-v="${i}" style="background:${c}"></button>`,
+            )
+            .join("") +
+          `<button class="swb orig ${S[key] < 0 ? "on" : ""}" aria-pressed="${S[key] < 0}" aria-label="${tx("orig")}" title="${tx("orig")}" data-k="${key}" data-v="-1">★</button>`;
+        const swc = (arr, key) =>
+          arr
+            .map(
+              (c, i) =>
+                `<button class="swb ${S[key] === c ? "on" : ""}" aria-pressed="${S[key] === c}" aria-label="${tx(key)} ${i + 1}" data-k="${key}" data-v="${c}" style="background:${c}"></button>`,
+            )
+            .join("");
+        const row = (key, inner, ic) =>
+          `<div class="opt"><canvas class="ico" data-ic="${ic || "row:" + key}" width="40" height="40"></canvas><div class="ob"><div class="olbl">${tx(key)}</div><div class="chips">${inner}</div></div></div>`;
+        const cards = Object.keys(PRESETS)
+          .map((k) => {
+            const p = PRESETS[k];
+            return `<button class="scard ${S.preset === k ? "on" : ""}" style="--sc:${p.c};--sbg:${p.bg}" data-preset="${k}" aria-pressed="${S.preset === k}"><canvas data-ic="preset:${k}" width="78" height="78"></canvas><span><b>${p.n[lang]}</b><small>${p.d[lang]}</small></span></button>`;
+          })
+          .join("");
+        openModal(
+          (R.newStyle
+            ? ""
+            : `<div style="text-align:right"><button class="alt" data-m="close" aria-label="Close">✕</button></div>`) +
+            `<div class="crx"><div class="cpanel"><div class="ctitle">★ ${tx("title")} ★</div><div class="csub">${tx("sub")}</div><canvas id="prev" class="prev" width="240" height="330" aria-label="${S.name}"></canvas>
+<div class="gbtns"><button class="gb boy ${S.gender === 0 ? "on" : ""}" aria-pressed="${S.gender === 0}" data-k="gender" data-v="0">♂ ${tx("boy")}</button><button class="gb girl ${S.gender === 1 ? "on" : ""}" aria-pressed="${S.gender === 1}" data-k="gender" data-v="1">♀ ${tx("girl")}</button></div>
+<div class="cbox"><div class="clbl">${tx("name")}</div><div class="nrow"><input type="text" id="nm" maxlength="12" value="${S.name}" placeholder="${tx("ph")}" aria-label="${tx("name")}"><button class="dice" data-dice="1" aria-label="Random name">🎲</button></div></div>` +
+            (R.newStyle ? `<button id="bStart" class="go">🚀 ${tx("go")}</button>` : "") +
+            `</div><div class="cpanel">${row("skin", sw(SKINS, "skin"))}${row("hair", pix("char", CHARN[lang]))}${row("hairCol", sw(HAIRC, "hairCol"))}${row("eyes", sw(EYEC, "eyes"))}${row("acc", pix("acc", ACCS))}${row("suit", swc(SUITS, "suit"), "row:hairCol")}</div>
+<div class="cpanel"><div class="ctitle gold">${tx("style")}</div>${cards}</div></div>
+<div class="cfoot"><div>🚀 ${tx("foot")}</div><div><button class="alt" data-lang="1" aria-label="Language">🌐 ${lang === "pt" ? "EN" : "PT"}</button> <span>Lunar Base Junior</span></div></div>`,
+        );
+        if (R.newStyle)
+          $("bStart").onclick = () => {
+            R.newStyle = false;
+            $("ovMenu").classList.remove("on");
+            writeSave();
+            openPlan();
+          };
+        $("nm").oninput = (e) => {
+          S.name = e.target.value.slice(0, 12) || "Mira";
+        };
+        renderIcons();
+      }
+      function renderIcons() {
+        document.querySelectorAll("#menuBox canvas[data-ic]").forEach((cv2) => {
+          const [key, v] = cv2.dataset.ic.split(":");
+          const c2 = cv2.getContext("2d");
+          c2.imageSmoothingEnabled = false;
+          c2.clearRect(0, 0, cv2.width, cv2.height);
+          const fit = (im, sx, sy, sw, sh) => {
+            if (!ready(im)) return false;
+            const s3 = Math.min(cv2.width / sw, cv2.height / sh);
+            const w = sw * s3,
+              h = sh * s3;
+            c2.imageSmoothingEnabled = s3 < 0.9;
+            c2.drawImage(im, sx, sy, sw, sh, (cv2.width - w) / 2, (cv2.height - h) / 2, w, h);
+            return true;
+          };
+          let ok = true;
+          if (key === "row") {
+            const im = AIMG.row[v];
+            ok = fit(im, 0, 0, im ? im.naturalWidth : 1, im ? im.naturalHeight : 1);
+          } else if (key === "preset") {
+            const im = AIMG.bust[v];
+            ok = fit(im, 0, 0, im ? im.naturalWidth : 1, im ? im.naturalHeight : 1);
+          } else if (key === "char") {
+            const look = Object.assign({}, S, { char: v, acc: 0 });
+            const cc = charCanvas(look);
+            if (cc) {
+              const m = ART[v];
+              const side = m.d * 2.6;
+              fit(cc, m.ex + 30 - side / 2, m.ey + 50 - side * 0.55, side, side);
+            } else ok = false;
+          } else if (key === "acc") {
+            if (+v === 0) {
+              c2.strokeStyle = "#9aa3c8";
+              c2.lineWidth = 4;
+              c2.beginPath();
+              c2.arc(20, 20, 12, 0, 7);
+              c2.moveTo(11, 29);
+              c2.lineTo(29, 11);
+              c2.stroke();
+            } else {
+              const im = AIMG.acc[ACCK[+v]];
+              ok = fit(im, 0, 0, im ? im.naturalWidth : 1, im ? im.naturalHeight : 1);
+            }
+          }
+          if (!ok) setTimeout(renderIcons, 120);
+        });
+      }
+      function drawPrev() {
+        const p = $("prev");
+        if (!p) return;
+        const c = p.getContext("2d");
+        c.imageSmoothingEnabled = false;
+        const Q = (x, y, w, h, col) => {
+          c.fillStyle = col;
+          c.fillRect(x, y, w, h);
+        };
+        Q(0, 0, 240, 330, "#0a0f33");
+        for (let i = 0; i < 40; i++)
+          Q(
+            (i * 53) % 236,
+            (i * 97) % 180,
+            i % 5 ? 2 : 4,
+            i % 5 ? 2 : 4,
+            i % 7 ? "#cfd8ff" : "#6fe3ff",
+          );
+        const disc = (cx, cy, r, col) => {
+          for (let y = -r; y <= r; y += 4)
+            for (let x = -r; x <= r; x += 4)
+              if (x * x + y * y <= r * r) Q(cx + x, cy + y, 4, 4, col);
+        };
+        disc(40, 52, 22, "#6a3bb0");
+        disc(34, 44, 8, "#8f5fe0");
+        for (let a = 0; a < 6.28; a += 0.12) {
+          const x = 40 + Math.cos(a) * 40,
+            y = 54 + Math.sin(a) * 9;
+          if (!(Math.sin(a) < 0 && Math.abs(Math.cos(a)) < 0.55))
+            Q(Math.round(x / 4) * 4, Math.round(y / 4) * 4, 4, 4, "#c9a6ff");
+        }
+        disc(206, 50, 20, "#2f6fe0");
+        disc(200, 44, 8, "#35c46a");
+        disc(212, 58, 6, "#35c46a");
+        disc(196, 128, 8, "#4a4f6a");
+        for (let x = 0; x < 240; x += 4) {
+          const hh =
+            30 + Math.round(Math.abs(Math.sin(x / 23)) * 22 + Math.abs(Math.sin(x / 9)) * 6);
+          Q(x, 248 - hh, 4, hh + 90, "#1f2b6e");
+          Q(x, 248 - hh, 4, 4, "#3a4aa8");
+        }
+        [
+          [110, 30, "#1a2560"],
+          [86, 22, "#22307a"],
+          [62, 16, "#2a3a92"],
+        ].forEach(([rx, ry, col]) => {
+          for (let y = -ry; y <= ry; y += 4)
+            for (let x = -rx; x <= rx; x += 4)
+              if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) Q(120 + x, 304 + y, 4, 4, col);
+        });
+        drawMira(c, 120, 318, 1, { mode: "idle", dir: 1, k: 3.6 });
+      }
+      function openStory() {
+        const rows = CHAPTERS.map(
+          (c, i) =>
+            `<div class="row"><div><b>${i < S.ch ? "✅" : i === S.ch ? "▶️" : "🔒"} ${i + 1}. ${c.t}</b><small>${i <= S.ch ? c.goal : "Locked"}</small></div></div>`,
+        ).join("");
+        const disc = S.disc.length
+          ? S.disc
+              .map(
+                (d) =>
+                  `<div class="row" style="align-items:flex-start"><div><b>🔭 ${d.name}</b><small>${d.fact}</small>${d.img ? `<small>NASA image: ${(d.title || "").replace(/</g, "")}</small>` : ""}</div>${d.img ? `<img src="${d.img}" alt="" style="width:120px;border-radius:8px">` : ""}</div>`,
+              )
+              .join("")
+          : `<div class="row">No discoveries yet. Scan ◆ markers on expeditions.</div>`;
+        const p = S.plan;
+        openModal(
+          head("📖 Story") +
+            rows +
+            (p
+              ? `<h3 style="margin:10px 0 4px">Your mission plan</h3><div class="row"><div><small>Launch mass ${Math.round(p.mass)} kg · transit ${p.days.toFixed(1)} days</small></div></div>`
+              : "") +
+            `<h3 style="margin:10px 0 4px">Codex</h3>` +
+            disc +
+            `<h3 style="margin:10px 0 4px">📡 NASA data in this game</h3><table><tr><th>What</th><th>Real source</th><th>In the game</th></tr>
+<tr><td>Cosmic radiation 1.37 mSv/day</td><td>Chang'e-4 lander</td><td>Constant dose meter</td></tr>
+<tr><td>Dose limit 250 mSv</td><td>NASA health standard</td><td>Your astronaut is evacuated if reached</td></tr>
+<tr><td>Solar storms</td><td>Aug 1972 event and live <a href="https://api.nasa.gov" target="_blank" rel="noopener">DONKI</a> data</td><td>The storm. ${LIVE.ok ? "Live: " + LIVE.id + ", " + Math.round(LIVE.speed) + " km/s" : "Offline: modeled on 1972"}</td></tr>
+<tr><td>Ice in shadowed craters</td><td>LRO and LCROSS</td><td>Ice only in dark craters</td></tr>
+<tr><td>Hydrogen-rich polymers shield radiation</td><td>NASA radiation research</td><td>Polymer walls and plates</td></tr>
+<tr><td>Veggie plant growth</td><td>ISS Veggie experiment</td><td>Plant care minigame</td></tr>
+<tr><td>ISS life support, food and exercise</td><td>NASA ISS operations</td><td>Mission planning screen</td></tr>
+<tr><td>Photos of discoveries</td><td><a href="https://images.nasa.gov" target="_blank" rel="noopener">NASA Image and Video Library</a></td><td>Codex</td></tr>
+</table><p style="color:var(--mut)"><a href="https://api.nasa.gov" target="_blank" rel="noopener">api.nasa.gov</a> · <a href="https://data.nasa.gov" target="_blank" rel="noopener">data.nasa.gov</a> · <a href="https://images.nasa.gov" target="_blank" rel="noopener">images.nasa.gov</a> · <a href="https://earthdata.nasa.gov" target="_blank" rel="noopener">earthdata.nasa.gov</a> · <a href="https://lunar.gsfc.nasa.gov" target="_blank" rel="noopener">lunar.gsfc.nasa.gov</a></p><p style="color:var(--mut);font-size:.85em">Educational project. Values are approximate. Not an official NASA product.</p>`,
+        );
+      }
 
-function bar(label,v,max,col,low){
-return`<div class="bar ${low?"low":""}"><b><span>${label}</span><span>${Math.round(v)}${max?" / "+Math.round(max):""}</span></b><div class="bt"><i style="width:${clamp(v/(max||100)*100,0,100)}%;background:${col}"></i></div></div>`;
-}
-let hudT=0;
-function updateHud(dt){
-hudT+=dt;
-if(hudT<.1)return;
-hudT=0;
-const day=Math.floor(G.t/DAY)+1;
-$("stats").innerHTML=
-bar("🫧 Life support",G.o2,100,"#4cc9f0",G.o2<25)+
-bar("🛡️ Hazard protection",G.haz,G.hazMax,"#b388ff",G.haz<25&&!inSafe())+
-bar("⚡ Suit energy",G.en,100,"#ffd166",G.en<15)+
-`<div style="font-size:.9em">☢️ Dose <b>${G.dose.toFixed(1)}</b> / ${DLIM} mSv · 📅 Day ${day} · 🎒 ${invCount()}/${G.cap}<br>${G.rescues?`🚑 Rescues ${G.rescues}/3 · `:""}${inSafe()?"<span class='ok'>In lander shelter</span>":""}</div>`;
-const o=OBJ[G.obj];
-$("obj").innerHTML=`<small>OBJECTIVE ${G.obj+1}/${OBJ.length}</small><br>${o?o.t:""}`;
-$("units").textContent="◈ "+Math.floor(G.units)+" units";
-let w="";
-const st=G.storm;
-if(st.state===1)w+=`<div class="wc">☢️ SOLAR STORM IN ${Math.ceil(st.t)} s · ${st.label}${inSafe()?" · you are safe":" · RETURN TO THE LANDER!"}</div>`;
-if(st.state===2)w+=`<div class="wc">☢️ STORM ACTIVE ${Math.ceil(st.t)} s${inSafe()?" · sheltered":" · SEEK SHELTER!"}</div>`;
-if(!G.landerOK)w+=`<div class="wc">⚠️ LANDER SYSTEMS FAILING · integrity ${G.landerHP}%</div>`;
-if(G.o2<20)w+=`<div class="wc">🫧 LOW LIFE SUPPORT</div>`;
-if(G.en<10)w+=`<div class="ww">⚡ Suit energy low${tileInfo(Math.floor(G.p.x),Math.floor(G.p.y)).t===3?" · the cold crater drains it":""}</div>`;
-if(invCount()>=G.cap)w+=`<div class="ww">🎒 Inventory full</div>`;
-$("warn").innerHTML=w;
-$("toast").innerHTML=G.toasts.map(t=>`<div>${t.m}</div>`).join("");
-const sb=$("scanbar");
-sb.style.display=G.scanP.v>0?"block":"none";
-$("scanfill").style.width=Math.min(100,G.scanP.v*100)+"%";
-}
+      $("menuBox").onclick = (e) => {
+        const b = e.target.closest("button,.sw");
+        if (!b) return;
+        ensureAudio();
+        const d = b.dataset;
+        if (d.m === "close") {
+          closeModal();
+          return;
+        }
+        if (d.m === "exp") {
+          R.paused = false;
+          $("ovMenu").classList.remove("on");
+          R.act = { t: "exp", x: DOORX };
+          R.tx = DOORX;
+          return;
+        }
+        if (d.m) {
+          startMG(d.m);
+          return;
+        }
+        if (d.craft !== undefined) {
+          const r = RC[+d.craft];
+          if (afford(r.cost)) {
+            payCost(r.cost, 1);
+            if (r.give) Object.keys(r.give).forEach((k) => (S.inv[k] += r.give[k]));
+            if (r.rat) S.rations += r.rat;
+            beep(900, 0.1);
+            openCraft();
+          }
+          return;
+        }
+        if (d.inst) {
+          if (S.inv.polymer >= 1 && S.polyL < 5) {
+            S.inv.polymer--;
+            S.polyL++;
+            beep(1100, 0.15);
+            toast("🛡️ Polymer plate installed in the suit.", 3000);
+            openCraft();
+          }
+          return;
+        }
+        if (d.buy) {
+          const c = +d.cost;
+          if (S.units >= c) {
+            S.units -= c;
+            if (d.buy === "rat") S.rations++;
+            else S.inv[d.buy]++;
+            beep(800, 0.08);
+            openCraft();
+          }
+          return;
+        }
+        if (d.ax) {
+          if (d.ax === "speed") A.speed = +d.v;
+          else A[d.ax] = !A[d.ax];
+          saveA();
+          applyA();
+          openA11y();
+          return;
+        }
+        if (d.k) {
+          S[d.k] = /^-?\d+$/.test(d.v) ? +d.v : d.v;
+          openStyle();
+          return;
+        }
+        if (d.preset) {
+          Object.assign(S, PRESETS[d.preset].look);
+          S.preset = d.preset;
+          openStyle();
+          return;
+        }
+        if (d.dice) {
+          S.name = NAMES_LIST[Math.floor(Math.random() * NAMES_LIST.length)];
+          openStyle();
+          return;
+        }
+        if (d.lang) {
+          S.lang = S.lang === "pt" ? "en" : "pt";
+          openStyle();
+          return;
+        }
+        if (d.art) {
+          S.art = d.art;
+          openStyle();
+          return;
+        }
+        for (const k of ["skin", "hairCol", "eyes", "hair", "outfit", "acc"]) {
+          if (d[k] !== undefined) {
+            S[k] = +d[k];
+            openStyle();
+            return;
+          }
+        }
+        if (d.suit) {
+          S.suit = d.suit;
+          openStyle();
+          return;
+        }
+        if (d.visor) {
+          S.visor = d.visor;
+          openStyle();
+          return;
+        }
+      };
 
-function renderMenu(tab){
-const near=landerDist()<6;
-let h=`<div class="tabs">${[["craft","🔧 Craft"],["suit","🧑‍🚀 Suit"],["term","🛰️ Terminal"],["codex","📖 Codex"],["data","📡 NASA data"]].map(t=>`<button class="alt ${t[0]===tab?"on":""}" data-tab="${t[0]}">${t[1]}</button>`).join("")}<button class="alt" data-close="1" style="margin-left:auto">✕ Close</button></div>`;
-h+=`<div class="inv">${Object.keys(ITEMS).map(k=>`<span style="border-left:4px solid ${ITEMS[k].c}">${ITEMS[k].n}: <b>${G.inv[k]}</b></span>`).join("")}<span>🎒 ${invCount()}/${G.cap}</span><span>◈ ${Math.floor(G.units)}</span></div>`;
-if(tab==="craft"){
-h+=RC.map((r,i)=>`<div class="row"><div><b>${r.n}</b><small>Needs ${Object.keys(r.cost).map(k=>r.cost[k]+" "+ITEMS[k].n).join(", ")} → ${r.fx}</small></div><button data-craft="${i}" ${canPay(r.cost)?"":"disabled"}>Craft</button></div>`).join("");
-}else if(tab==="suit"){
-h+=`<div class="row"><div><b>Install polymer plate</b><small>Uses 1 Polymer plate. Permanently +20 hazard protection and slower drain in storms. Installed layers: ${G.polyL}</small></div><button data-inst="1" ${G.inv.polymer>=1?"":"disabled"}>Install</button></div>`;
-h+=`<div class="tip" style="color:var(--mut);margin-top:8px">Hazard protection ${Math.round(G.haz)}/${G.hazMax}. Radiation dose so far: ${G.dose.toFixed(1)} mSv of ${DLIM}. Cosmic radiation on the Moon delivers about ${GCR} mSv per day.</div>`;
-}else if(tab==="term"){
-if(!near){h+=`<div class="row">You must be near the lander to use its terminal.</div>`}
-else{
-h+=`<h3 style="margin:8px 0 4px">Sell to Artemis supply</h3>`;
-h+=Object.keys(SELL).map(k=>`<div class="row"><div><b>${ITEMS[k].n}</b><small>${SELL[k]} unit each · you have ${G.inv[k]}</small></div><button data-sell="${k}" ${G.inv[k]?"":"disabled"}>Sell all (+${G.inv[k]*SELL[k]})</button></div>`).join("");
-h+=`<h3 style="margin:10px 0 4px">Buy supplies</h3>`;
-const BUY=[["polymer",60],["metal",40],["solar",70]];
-h+=BUY.map(b=>`<div class="row"><div><b>${ITEMS[b[0]].n}</b><small>${b[1]} units</small></div><button data-buy="${b[0]}" data-cost="${b[1]}" ${G.units>=b[1]&&invCount()<G.cap?"":"disabled"}>Buy</button></div>`).join("");
-h+=`<div class="row"><div><b>Backpack upgrade</b><small>+10 slots · 80 units</small></div><button data-pack="1" ${G.units>=80?"":"disabled"}>Buy</button></div>`;
-h+=`<h3 style="margin:10px 0 4px">Repair and build</h3>`;
-h+=`<div class="row"><div><b>Repair lander</b><small>3 Metal plates + 2 Solar cells${G.landerOK?" · already working":""}</small></div><button data-repair="1" ${(!G.landerOK&&G.inv.metal>=3&&G.inv.solar>=2)?"":"disabled"}>Repair</button></div>`;
-h+=`<div class="row"><div><b>Solar array</b><small>2 Solar cells + 1 Metal plate · faster suit recharge at base${G.built.solar?" · built":""}</small></div><button data-build="solar" ${(!G.built.solar&&G.inv.solar>=2&&G.inv.metal>=1)?"":"disabled"}>Build</button></div>`;
-h+=`<div class="row"><div><b>Shelter dome</b><small>4 Polymer plates + 2 Metal plates · bigger, stronger safe zone${G.built.dome?" · built":""}</small></div><button data-build="dome" ${(!G.built.dome&&G.inv.polymer>=4&&G.inv.metal>=2)?"":"disabled"}>Build</button></div>`;
-}
-}else if(tab==="codex"){
-h+=G.disc.length?G.disc.map(d=>`<div class="row"><div><b>🔭 ${d.name}</b><small>${d.fact}</small></div></div>`).join(""):`<div class="row">No discoveries yet. Find a ◆ marker and hold E next to it.</div>`;
-}else{
-h+=`<table><tr><th>What</th><th>Real source</th><th>Where it shows up</th></tr>
-<tr><td>Cosmic radiation 1.37 mSv/day</td><td>Chang'e-4 lander (LND instrument)</td><td>Constant dose meter</td></tr>
-<tr><td>Dose limit 250 mSv</td><td>NASA health standard</td><td>Mission fails if reached</td></tr>
-<tr><td>Solar storms</td><td>Aug 1972 event; live <a href="https://api.nasa.gov" target="_blank" rel="noopener">DONKI CME</a> data</td><td>The big storm. ${LIVE.ok?`Live: ${LIVE.id}, ${Math.round(LIVE.speed)} km/s`:"Offline: modeled on 1972"}</td></tr>
-<tr><td>Ice in shadowed craters</td><td>LRO and LCROSS</td><td>Ice only spawns in dark craters</td></tr>
-<tr><td>Oxygen from ilmenite</td><td>NASA ISRU research</td><td>Refine oxygen</td></tr>
-<tr><td>Hydrogen-rich polymers shield radiation</td><td>NASA radiation research</td><td>Polymer plates</td></tr>
-<tr><td>Long sunlit ridges, cold dark craters</td><td>LRO illumination maps</td><td>Suit energy recharges in sun, drains in craters</td></tr>
-</table>
-<p style="color:var(--mut)">Sources: <a href="https://api.nasa.gov" target="_blank" rel="noopener">api.nasa.gov</a> · <a href="https://data.nasa.gov" target="_blank" rel="noopener">data.nasa.gov</a> · <a href="https://images.nasa.gov" target="_blank" rel="noopener">images.nasa.gov</a> · <a href="https://earthdata.nasa.gov" target="_blank" rel="noopener">earthdata.nasa.gov</a> · <a href="https://lunar.gsfc.nasa.gov" target="_blank" rel="noopener">lunar.gsfc.nasa.gov</a></p>
-<p style="color:var(--mut);font-size:.85em">Educational project. Values are approximate and simplified. Not an official NASA product.</p>`;
-}
-$("menuBox").innerHTML=h;
-$("menuBox").dataset.tab=tab;
-}
-let menuTab="craft";
-function openMenu(tab){
-if(!G||G.over)return;
-menuTab=tab||menuTab;
-G.paused=true;
-renderMenu(menuTab);
-$("ovMenu").classList.add("on");
-}
-function closeMenu(){
-$("ovMenu").classList.remove("on");
-if(G&&!G.over)G.paused=false;
-}
-$("menuBox").onclick=e=>{
-const b=e.target.closest("button");
-if(!b||!G)return;
-ensureAudio();
-const d=b.dataset;
-if(d.close){closeMenu();return}
-if(d.tab){menuTab=d.tab;renderMenu(menuTab);return}
-if(d.craft!==undefined){
-const r=RC[+d.craft];
-const gain=r.give?Object.values(r.give).reduce((a,c)=>a+c,0):0;
-const spent=Object.values(r.cost).reduce((a,c)=>a+c,0);
-if(canPay(r.cost)&&invCount()-spent+gain<=G.cap){
-pay(r.cost);
-if(r.give)Object.keys(r.give).forEach(k=>G.inv[k]+=r.give[k]);
-if(r.run)r.run();
-beep(900,.1);
-}else toast("Not enough room in your backpack.",2000);
-}
-if(d.inst){if(G.inv.polymer>=1){G.inv.polymer--;G.polyL++;G.hazMax+=20;G.haz=G.hazMax;beep(1100,.15);toast("🛡️ Polymer plate installed. Hazard protection up!",3000)}}
-if(d.sell){const k=d.sell;G.units+=G.inv[k]*SELL[k];G.inv[k]=0;beep(800,.08)}
-if(d.buy){const c=+d.cost;if(G.units>=c&&invCount()<G.cap){G.units-=c;G.inv[d.buy]++;beep(800,.08)}}
-if(d.pack){if(G.units>=80){G.units-=80;G.cap+=10}}
-if(d.repair){if(!G.landerOK&&G.inv.metal>=3&&G.inv.solar>=2){G.inv.metal-=3;G.inv.solar-=2;G.landerOK=true;G.landerHP=100;beep(1200,.2);toast("🔧 Lander repaired!",3000)}}
-if(d.build==="solar"&&G.inv.solar>=2&&G.inv.metal>=1&&!G.built.solar){G.inv.solar-=2;G.inv.metal-=1;G.built.solar=true;beep(1200,.2);toast("☀️ Solar array online!",3000)}
-if(d.build==="dome"&&G.inv.polymer>=4&&G.inv.metal>=2&&!G.built.dome){G.inv.polymer-=4;G.inv.metal-=2;G.built.dome=true;beep(1200,.2);toast("🛡️ Shelter dome built! Safe zone expanded.",3000)}
-renderMenu(menuTab);
-};
+      let PL = null;
 
-function end(ok,reason){
-if(G.over)return;
-G.over=true;
-const day=Math.floor(G.t/DAY)+1;
-const why={
-dose:"Radiation dose reached the 250 mSv limit. Outside the shelter, a solar storm can deliver that in under a minute if your hazard protection runs out. Polymer layers and a fast retreat to the lander are the answer.",
-rescues:"You needed three emergency rescues. Always watch your life support and head home before it empties. Refine oxygen from ilmenite or ice to extend trips.",
-win:"The outpost stands. Solar power, a radiation shelter and a working lander turn a crash site into a base."
-};
-const stars=ok?1+(G.rescues===0?1:0)+(G.dose<120?1:0):0;
-$("endBox").innerHTML=`<h2>${ok?"🏆 OUTPOST ESTABLISHED!":"💥 MISSION FAILED"}</h2><p>${why[reason]}</p>${ok?`<p style="font-size:1.6rem;margin:4px 0">${"⭐".repeat(stars)}${"☆".repeat(3-stars)}</p>`:""}<ul>
-<li>📅 Mission day: ${day}</li>
-<li>🔭 Discoveries logged: ${G.disc.length}</li>
-<li>☢️ Radiation dose: ${G.dose.toFixed(0)} mSv of ${DLIM}${G.st.peakStormDose>0?` (storm alone: ${G.st.peakStormDose.toFixed(0)} mSv through your shielding)`:""}</li>
-<li>🛡️ Polymer layers installed: ${G.polyL}</li>
-<li>⛏️ Resource deposits mined: ${G.st.mined} · farthest trip: ${Math.round(G.st.maxDist)} tiles</li>
-<li>🚑 Rescues used: ${G.rescues}</li>
-<li>◈ Units: ${Math.floor(G.units)}</li></ul>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="bAgain">🔁 New world</button><button class="alt" id="bCodex">📖 Open codex</button></div>`;
-$("ovEnd").classList.add("on");
-$("bAgain").onclick=()=>{$("ovEnd").classList.remove("on");newGame();showStory(0)};
-$("bCodex").onclick=()=>{$("ovEnd").classList.remove("on");G.over=false;G.paused=true;menuTab="codex";renderMenu("codex");$("ovMenu").classList.add("on");G.over=true};
-}
+      function planGraphs(c) {
+        const g = (l, v, max, col, txt) =>
+          `<div class="l"><span>${l}</span><b>${txt}</b></div><div class="massbar"><i style="width:${clamp((v / max) * 100, 0, 100)}%;background:${col}"></i></div>`;
+        return (
+          g(
+            "⏳ Mission time",
+            c.missionDays,
+            lvNow().days,
+            "#5aa9ff",
+            c.missionDays.toFixed(1) + " days at the Moon",
+          ) +
+          g("🫧 Life support", c.ls, 100, "#4cc9f0", Math.round(c.ls) + " / 100") +
+          g("🛡️ Protective shield", c.sh, 100, "#b388ff", Math.round(c.sh) + " / 100") +
+          g("💪 Resilience", c.res, 100, "#7bd88f", Math.round(c.res) + " / 100")
+        );
+      }
+      function sizePenalty() {
+        return Object.keys(S.blocks).length * 0.012 * (S.plan ? S.plan.missionDays : 6);
+      }
+      function missionTotal() {
+        return Math.max(1, (S.plan ? S.plan.missionDays : 12.58) - sizePenalty()) * DAYLEN;
+      }
+      function missionLeft() {
+        return missionTotal() - S.t;
+      }
+      function showTimeUp() {
+        R.timeUp = true;
+        R.paused = true;
+        const done = S.ch >= CHAPTERS.length;
+        $("endBox").innerHTML =
+          `<h2>${done ? "🏁 Mission time is over" : "⏳ Mission time ran out"}</h2><p>${done ? S.name + " finished the whole story and the mission clock ran out. Time to head home." : "The mission clock hit zero before the outpost was finished. A heavier ship and a bigger base both cost mission time: every extra kilogram and every extra block took days away."}</p><ul><li>📅 Days on the Moon: ${Math.floor(S.t / DAYLEN)}</li><li>🔭 Discoveries: ${S.disc.length}</li><li>🧱 Blocks built: ${Object.keys(S.blocks).length}</li><li>☢️ Dose: ${S.dose.toFixed(0)} of ${DLIM} mSv</li></ul><button id="bNew2">Start a new mission</button>`;
+        $("ovEnd").classList.add("on");
+        $("bNew2").onclick = () => {
+          const keep = {
+            name: S.name,
+            suit: S.suit,
+            visor: S.visor,
+            acc: S.acc,
+            skin: S.skin,
+            hair: S.hair,
+            hairCol: S.hairCol,
+            eyes: S.eyes,
+            outfit: S.outfit,
+          };
+          S = Object.assign(defSave(), keep, { started: true, ch: -1 });
+          writeSave();
+          location.reload();
+        };
+      }
+      const MODS = {
+        "mod:sleep": {
+          n: "Sleeping nook",
+          e: "🛏️",
+          cells: [
+            [0, 0, "bed"],
+            [0, -1, "lamp"],
+            [1, 0, "poster"],
+          ],
+        },
+        "mod:garden": {
+          n: "Garden row",
+          e: "🌱",
+          cells: [
+            [0, 0, "plant"],
+            [1, 0, "plant"],
+            [2, 0, "plant"],
+            [1, -1, "lamp"],
+          ],
+        },
+        "mod:wall": {
+          n: "Wall of hydrogen",
+          e: "🛡️",
+          cells: [
+            [0, 0, "polymer"],
+            [0, -1, "polymer"],
+            [0, -2, "polymer"],
+          ],
+        },
+        "mod:cozy": {
+          n: "Cozy corner",
+          e: "🪟",
+          cells: [
+            [0, 0, "window"],
+            [1, 0, "window"],
+            [2, 0, "poster"],
+          ],
+        },
+        "mod:yard": {
+          n: "Solar yard",
+          e: "☀️",
+          cells: [
+            [0, 0, "solar"],
+            [1, 0, "solar"],
+            [2, 0, "solar"],
+          ],
+        },
+      };
+      function modCost(m) {
+        const t = {};
+        m.cells.forEach((c) => {
+          const b = BLK[c[2]];
+          Object.keys(b.cost).forEach((k) => (t[k] = (t[k] || 0) + b.cost[k]));
+        });
+        return t;
+      }
+      function canPlaceMod(c, r, m) {
+        for (const x of m.cells) {
+          const q = canPlace(c + x[0], r + x[1], x[2]);
+          if (!q.ok) return q;
+        }
+        return { ok: true };
+      }
+      const APIKEY = "QqdH8KW98DC7pqKqLCGc7zd68wKcH6CPgQnGPhbk";
+      async function loadWx() {
+        try {
+          const raw = localStorage.getItem("lbj_wx2");
+          if (raw) {
+            const o = JSON.parse(raw);
+            if (Date.now() - o.at < 6 * 3600 * 1000) {
+              LIVE.flr = o.flr;
+              LIVE.sep = o.sep;
+              LIVE.gst = o.gst;
+              return;
+            }
+          }
+        } catch (e) {}
+        try {
+          const f = (x) => x.toISOString().slice(0, 10);
+          const end = new Date();
+          const q = (days) =>
+            `startDate=${f(new Date(Date.now() - days * 864e5))}&endDate=${f(end)}&api_key=${APIKEY}`;
+          const get = async (ep, days) => {
+            const r = await fetch("https://api.nasa.gov/DONKI/" + ep + "?" + q(days));
+            return r.ok ? await r.json() : [];
+          };
+          const [fl, sp, gs] = await Promise.all([get("FLR", 30), get("SEP", 30), get("GST", 60)]);
+          const byTime = (p, q2) => (p.t < q2.t ? 1 : -1);
+          LIVE.flr = fl
+            .filter((x) => x.classType)
+            .map((x) => ({
+              id: x.flrID,
+              cls: x.classType,
+              t: x.peakTime || x.beginTime,
+              ar: x.activeRegionNum,
+            }))
+            .sort(byTime)
+            .slice(0, 8);
+          LIVE.sep = sp
+            .map((x) => ({ id: x.sepID, t: x.eventTime }))
+            .sort(byTime)
+            .slice(0, 6);
+          LIVE.gst = gs
+            .map((x) => ({
+              id: x.gstID,
+              t: x.startTime,
+              kp: Math.max(0, ...(x.allKpIndex || []).map((k) => k.kpIndex || 0)),
+            }))
+            .sort(byTime)
+            .slice(0, 6);
+          localStorage.setItem(
+            "lbj_wx2",
+            JSON.stringify({ at: Date.now(), flr: LIVE.flr, sep: LIVE.sep, gst: LIVE.gst }),
+          );
+        } catch (e) {}
+      }
+      function openWx() {
+        const fmt = (t) => (t || "").replace("T", " ").replace("Z", "").slice(0, 16);
+        const empty = (n, m) => `<tr><td colspan="${n}">${m}</td></tr>`;
+        const flr =
+          LIVE.flr && LIVE.flr.length
+            ? LIVE.flr
+                .map(
+                  (x) =>
+                    `<tr><td>${fmt(x.t)}</td><td><b>${x.cls}</b></td><td>${x.ar ? "AR " + x.ar : "-"}</td></tr>`,
+                )
+                .join("")
+            : empty(
+                3,
+                "No notable flares catalogued in the last 30 days: a quiet Sun, or no live data.",
+              );
+        const sep =
+          LIVE.sep && LIVE.sep.length
+            ? LIVE.sep.map((x) => `<tr><td>${fmt(x.t)}</td><td>${x.id}</td></tr>`).join("")
+            : empty(
+                2,
+                "No solar particle events in the last 30 days. The Sun has been quiet on that front.",
+              );
+        const gst =
+          LIVE.gst && LIVE.gst.length
+            ? LIVE.gst.map((x) => `<tr><td>${fmt(x.t)}</td><td>Kp ${x.kp}</td></tr>`).join("")
+            : empty(2, "No geomagnetic storms in the last 60 days, or no live data.");
+        const cme =
+          LIVE.cmes && LIVE.cmes.length
+            ? LIVE.cmes
+                .map((x) => `<tr><td>${fmt(x.t)}</td><td>${Math.round(x.speed)} km/s</td></tr>`)
+                .join("")
+            : empty(2, "No live data right now.");
+        openModal(
+          head("📡 Space weather forecast") +
+            `<p style="color:var(--mut);margin-top:0">Real events from NASA's DONKI database. The storm in this game is sized from the fastest recent coronal mass ejection (CME). ${LIVE.ok ? "Next storm source: <b>" + LIVE.id + "</b> at " + Math.round(LIVE.speed) + " km/s." : "Offline: the game uses a storm modeled on August 1972."}</p><h3 style="margin:8px 0 2px">🌪️ Fastest CMEs, last 30 days</h3><table><tr><th>Start (UTC)</th><th>Speed</th></tr>${cme}</table><h3 style="margin:10px 0 2px">🧲 Geomagnetic storms, last 60 days</h3><table><tr><th>Start (UTC)</th><th>Strength</th></tr>${gst}</table><h3 style="margin:10px 0 2px">☀️ Solar flares, last 30 days</h3><table><tr><th>Peak time (UTC)</th><th>Class</th><th>Region</th></tr>${flr}</table><h3 style="margin:10px 0 2px">⚡ Solar particle events (radiation storms), last 30 days</h3><table><tr><th>Time (UTC)</th><th>ID</th></tr>${sep}</table><p style="color:var(--mut);font-size:.85em">Flare classes B, C, M and X: each letter is about 10 times stronger than the one before. Kp measures Earth's geomagnetic activity from 0 to 9. Source: <a href="https://api.nasa.gov" target="_blank" rel="noopener">api.nasa.gov (DONKI)</a>.</p>`,
+        );
+      }
+      function planCalc(sel) {
+        let m = 0;
+        MAND.forEach((i) => (m += i.kg));
+        let rat = 0;
+        MAND.forEach((i) => {
+          if (i.rat) rat += i.rat;
+        });
+        [...OPTS, ...GEAR].forEach((i) => {
+          if (sel[i.id]) {
+            m += i.kg;
+            if (i.rat) rat += i.rat;
+          }
+        });
+        const days = 3 + (m - 4000) / 1500;
+        const used = Math.ceil(days);
+        const dose = days * GCR * 0.8 * (sel.med ? 0.9 : 1);
+        const missionDays = Math.max(0.5, lvNow().days - 2 * days);
+        const ls = clamp(
+          30 + rat * 2.5 + (sel.greenhouse ? 15 : 0) + (sel.cabins ? 5 : 0) + (sel.med ? 8 : 0),
+          0,
+          100,
+        );
+        const sh = clamp(30 + (sel.suits ? 30 : 0) + (sel.med ? 8 : 0), 0, 100);
+        const res = clamp(
+          20 +
+            (sel.arm ? 20 : 0) +
+            (sel.gym ? 15 : 0) +
+            (sel.cabins ? 15 : 0) +
+            (sel.cupola ? 10 : 0) +
+            (sel.lab ? 8 : 0) +
+            (sel.instr ? 7 : 0) +
+            (sel.personal ? 10 : 0) +
+            (sel.hyg2 ? 5 : 0) +
+            (sel.food3 ? 5 : 0) +
+            (sel.food4 ? 5 : 0),
+          0,
+          100,
+        );
+        return { m, days, rat, used, left: rat - used, dose, missionDays, ls, sh, res };
+      }
+      function openPlan() {
+        if (!PL) PL = { sel: S.plan ? { ...S.plan.sel } : {} };
+        R.paused = true;
+        renderPlan();
+        $("ovPlan").classList.add("on");
+      }
+      function renderPlan() {
+        const c = planCalc(PL.sel);
+        const over = c.m > CAPKG;
+        const card = (i, lock) =>
+          `<div class="pc ${lock ? "lock" : PL.sel[i.id] ? "sel" : ""}" data-id="${i.id}" tabindex="0" role="button" aria-pressed="${lock ? "true" : !!PL.sel[i.id]}"><div style="font-size:1.2em">${lock ? "🔒" : PL.sel[i.id] ? "✅" : "⬜"}</div><div><b>${i.n}</b><small>${i.d}</small></div><div class="kg">${i.kg} kg</div></div>`;
+        const left = c.left;
+        $("planBox").innerHTML =
+          `<h2>🚀 Phase 1 · Pack the ship on Earth</h2><p style="margin:0 0 6px;color:var(--mut)">Everything on the ship has mass. A heavier ship takes longer to reach the Moon, and a longer trip eats more food and collects more radiation. The real mission length minus the trip there and back is your time at the Moon, so a heavy, slow ship leaves fewer days to work. Pick what ${S.name} really needs.</p>${levelPicker()}${techBox()}
+<div class="plan"><div class="catgrid">
+<h3>🔒 Required systems</h3>${MAND.map((i) => card(i, true)).join("")}
+<h3>🧩 Optional modules</h3>${OPTS.map((i) => card(i, false)).join("")}
+<h3>🎒 Supplies and gear</h3>${GEAR.map((i) => card(i, false)).join("")}
+</div><div><div class="sum">
+<b>Mission graphs</b>${planGraphs(c)}<b>Ship summary</b>
+<div class="massbar"><i style="width:${Math.min(100, (c.m / CAPKG) * 100)}%;background:${over ? "var(--bad)" : c.m > CAPKG * 0.9 ? "var(--warn)" : "var(--ok)"}"></i></div>
+<div class="l"><span>Launch mass</span><b class="${over ? "no" : ""}">${Math.round(c.m)} / ${CAPKG} kg</b></div>
+<div class="l"><span>🕒 Transit time</span><b>${c.days.toFixed(1)} days</b></div>
+<div class="l"><span>🍲 Meals packed</span><b>${c.rat}</b></div>
+<div class="l"><span>🍴 Eaten in transit</span><b>-${c.used}</b></div>
+<div class="l"><span>🍲 Meals at arrival</span><b class="${left <= 0 ? "no" : "ok"}">${Math.max(0, left)}</b></div>
+<div class="l"><span>☢️ Dose in transit</span><b>${c.dose.toFixed(1)} mSv</b></div>
+<div class="l"><span>🚪 Can go outside</span><b class="${PL.sel.airlock ? "ok" : "no"}">${PL.sel.airlock ? "Yes" : "No airlock"}</b></div>
+<p style="color:var(--mut);font-size:.85em">${over ? "Too heavy! Remove something." : left <= 0 ? "You will arrive hungry. Pack more food or a lighter ship." : "Heavier ship = longer trip = more food and radiation."}</p>
+<button id="bLaunch" style="width:100%" ${over ? "disabled" : ""}>🚀 Launch</button></div></div></div>`;
+      }
+      $("planBox").onclick = (e) => {
+        const lvc = e.target.closest(".lv");
+        if (lvc) {
+          S.level = +lvc.dataset.lv;
+          applyLevel();
+          renderPlan();
+          const lf = document.querySelector('.lv[data-lv="' + lvc.dataset.lv + '"]');
+          if (lf) lf.focus();
+          return;
+        }
+        const p = e.target.closest(".pc");
+        if (p && !p.classList.contains("lock")) {
+          PL.sel[p.dataset.id] = !PL.sel[p.dataset.id];
+          const fid = p.dataset.id;
+          renderPlan();
+          const ff = document.querySelector('.pc[data-id="' + fid + '"]');
+          if (ff) ff.focus();
+          return;
+        }
+        if (e.target.id === "bLaunch") launch();
+      };
+      function launch() {
+        const c = planCalc(PL.sel);
+        if (c.m > CAPKG) return;
+        S.plan = {
+          sel: { ...PL.sel },
+          mass: c.m,
+          days: c.days,
+          missionDays: c.missionDays,
+          baseDays: lvNow().days,
+          day: lvNow().day,
+          need: lvNow().need,
+          storm: lvNow().storm,
+          level: S.level == null ? 1 : S.level,
+          ls: c.ls,
+          sh: c.sh,
+          res: c.res,
+        };
+        S.planned = true;
+        applyLevel();
+        S.rations = Math.max(0, c.left);
+        S.needs.hunger = 85 - Math.max(0, -c.left) * 15;
+        S.dose = c.dose;
+        S.polyL = PL.sel.suits ? 1 : 0;
+        S.needs.mood = 80;
+        writeSave();
+        $("ovPlan").classList.remove("on");
+        showTransit(c);
+      }
+      function showTransit(c) {
+        R.paused = true;
+        R.storyOpen = true;
+        const days = Math.ceil(c.days);
+        $("storyBox").innerHTML =
+          `<h2>🚀 Transit to the Moon</h2><div class="massbar"><i id="tbar" style="width:0;background:var(--blue)"></i></div><div id="tlog" style="min-height:120px;color:var(--mut)"></div><div id="tend"></div>`;
+        $("ovStory").classList.add("on");
+        let d = 0;
+        const iv = setInterval(() => {
+          d++;
+          $("tbar").style.width = Math.min(100, (d / days) * 100) + "%";
+          $("tlog").innerHTML +=
+            `<div>Day ${d}: 🍴 one meal eaten · ☢️ +${(c.dose / days).toFixed(1)} mSv${d === days ? " · Moon in sight!" : ""}</div>`;
+          if (d >= days) {
+            clearInterval(iv);
+            $("tend").innerHTML =
+              `<p>Arrival after <b>${c.days.toFixed(1)} days</b>. Meals left: <b>${Math.max(0, c.left)}</b>. Dose so far: <b>${c.dose.toFixed(1)} mSv</b>. Mission time available: <b>${c.missionDays.toFixed(1)} days</b> (real ${lvNow().n}: ${lvNow().dur}). Apollo crews took about 3 days to reach the Moon.${c.left < 0 ? " <span class='no'>The crew went hungry on the way.</span>" : ""}</p><button id="bLand">🌙 Land at Hopper Base</button>`;
+            $("bLand").onclick = () => {
+              $("ovStory").classList.remove("on");
+              R.storyOpen = false;
+              S.ch = 0;
+              S.flags.intro = 1;
+              writeSave();
+              showChapter(0);
+            };
+          }
+        }, 650);
+      }
 
-let last=0;
-function loop(ts){
-const dt=Math.min(.05,(ts-last)/1000);
-last=ts;
-if(G){
-if(!G.paused&&!G.over)update(dt);
-if(G){draw(ts);if(!G.over)updateHud(dt)}
-}
-requestAnimationFrame(loop);
-}
+      let MG = null;
+      const mg = $("mg"),
+        mc = mg.getContext("2d");
+      const WIRE = ["#ff5d73", "#4cc9f0", "#ffd166", "#7bd88f", "#b388ff"];
+      function mgPos(e) {
+        const r = mg.getBoundingClientRect();
+        return {
+          x: ((e.clientX - r.left) / r.width) * 640,
+          y: ((e.clientY - r.top) / r.height) * 420,
+        };
+      }
+      function startMG(kind) {
+        $("ovMenu").classList.remove("on");
+        R.paused = true;
+        MG = { kind, t: 0, res: null, rt: 0, keys: {} };
+        const T = {
+          wires: [
+            "🔧 Repair wires",
+            "Click a wire end on the left, then its matching color on the right. Wrong match costs 2 seconds.",
+          ],
+          plant: [
+            "🌱 Plant care",
+            "Keep water, light and nutrients in the green zone. Click the buttons or press 1, 2, 3.",
+          ],
+          storm: [
+            "☢️ Storm shield drill",
+            "Move the polymer shield with the mouse, finger or arrow keys. Block the particles!",
+          ],
+          maze: [
+            "🚙 Dust maze",
+            "Arrow keys or WASD to drive. Collect everything before time runs out.",
+          ],
+        }[kind];
+        $("mgTitle").textContent = T[0];
+        $("mgHelp").textContent = T[1];
+        if (kind === "wires") {
+          const r = WIRE.map((c, i) => i).sort(() => Math.random() - 0.5);
+          MG.max = 30 + (S.plan && mod("arm") ? 10 : 0);
+          MG.right = r;
+          MG.con = [];
+          MG.sel = -1;
+          MG.flash = 0;
+        } else if (kind === "plant") {
+          MG.max = 28;
+          MG.m = [70, 70, 70];
+          MG.growth = 0;
+          MG.cd = [0, 0, 0];
+        } else if (kind === "storm") {
+          MG.max = 25;
+          MG.sx = 320;
+          MG.parts = [];
+          MG.blocked = 0;
+          MG.hit = 0;
+          MG.total = 0;
+          MG.sp = 0;
+          MG.tx = 320;
+        } else {
+          genMaze();
+          MG.max = 40;
+          MG.dir = null;
+          MG.mt = 0;
+          MG.got = { regolith: 0, ilmenite: 0, ice: 0 };
+        }
+        $("ovMG").classList.add("on");
+      }
+      function genMaze() {
+        const MC = 21,
+          MR = 15;
+        const g = Array.from({ length: MR }, () => Array(MC).fill(1));
+        const st = [[1, 1]];
+        g[1][1] = 0;
+        const dirs = [
+          [2, 0],
+          [-2, 0],
+          [0, 2],
+          [0, -2],
+        ];
+        while (st.length) {
+          const [x, y] = st[st.length - 1];
+          const o = dirs.filter(([dx, dy]) => {
+            const nx = x + dx,
+              ny = y + dy;
+            return nx > 0 && ny > 0 && nx < MC - 1 && ny < MR - 1 && g[ny][nx] === 1;
+          });
+          if (!o.length) {
+            st.pop();
+            continue;
+          }
+          const [dx, dy] = o[Math.floor(Math.random() * o.length)];
+          g[y + dy / 2][x + dx / 2] = 0;
+          g[y + dy][x + dx] = 0;
+          st.push([x + dx, y + dy]);
+        }
+        for (let i = 0; i < 14; i++) {
+          const x = 1 + Math.floor(Math.random() * (MC - 2)),
+            y = 1 + Math.floor(Math.random() * (MR - 2));
+          if (g[y][x] === 1 && (x % 2 === 0) !== (y % 2 === 0)) g[y][x] = 0;
+        }
+        const fl = [];
+        for (let y = 0; y < MR; y++)
+          for (let x = 0; x < MC; x++) if (g[y][x] === 0 && (x > 2 || y > 2)) fl.push([x, y]);
+        fl.sort(() => Math.random() - 0.5);
+        const items = {};
+        fl.slice(0, 15).forEach(([x, y], i) => {
+          items[x + "," + y] = i < 8 ? "regolith" : i < 11 ? "ilmenite" : "ice";
+        });
+        MG.g = g;
+        MG.items = items;
+        MG.x = 1;
+        MG.y = 1;
+      }
+      function finishMG(ok, data) {
+        if (MG.res) return;
+        MG.res = { ok, data };
+        MG.rt = 0;
+      }
+      function applyMG() {
+        const m = MG;
+        MG = null;
+        $("ovMG").classList.remove("on");
+        const r = m.res;
+        let msg = "";
+        if (m.kind === "wires") {
+          if (r.ok) {
+            if (R.fault) {
+              R.fault = null;
+              S.flags.repaired = (S.flags.repaired || 0) + 1;
+              S.units += 20;
+              msg = "🔧 Fault repaired! +20 units";
+            } else {
+              S.units += 10;
+              msg = "Nice practice! +10 units";
+            }
+            S.needs.mood = Math.min(100, S.needs.mood + 6);
+          } else msg = "The wires got tangled. Try again!";
+        } else if (m.kind === "plant") {
+          let n = r.data;
+          if (n > 0 && S.plan && mod("greenhouse")) n += 1;
+          S.rations += n;
+          S.units += n * 5;
+          S.needs.mood = Math.min(100, S.needs.mood + 4);
+          S.flags.plants = (S.flags.plants || 0) + 1;
+          msg = n
+            ? `🌱 Harvest! +${n} rations, +${n * 5} units. Plants need balanced water, light and nutrients, just like on the ISS.`
+            : "The plant wilted. Try again!";
+        } else if (m.kind === "storm") {
+          const f = r.data;
+          if (R.storm.state) {
+            R.storm.prot = Math.max(R.storm.prot, f);
+            R.storm.drilled = true;
+            msg = `☢️ You blocked ${Math.round(f * 100)}% of the particles. The storm will hit softer.`;
+          } else {
+            S.units += 15;
+            msg = `Drill done: blocked ${Math.round(f * 100)}%. +15 units`;
+          }
+        } else {
+          const g = r.data;
+          S.inv.regolith += g.regolith;
+          S.inv.ilmenite += g.ilmenite;
+          S.inv.ice += g.ice;
+          S.lootTotal = (S.lootTotal || 0) + g.regolith + g.ilmenite + g.ice;
+          S.needs.mood = Math.min(100, S.needs.mood + 4);
+          msg = `🚙 Collected ${g.regolith} regolith, ${g.ilmenite} ilmenite, ${g.ice} ice.`;
+        }
+        toast(msg, 5000);
+        writeSave();
+        R.paused = false;
+      }
+      $("mgQuit").onclick = () => {
+        if (!MG) return;
+        if (!MG.res)
+          MG.res = {
+            ok: false,
+            data:
+              MG.kind === "plant"
+                ? 0
+                : MG.kind === "storm"
+                  ? MG.total
+                    ? MG.blocked / MG.total
+                    : 0
+                  : MG.kind === "maze"
+                    ? MG.got
+                    : 0,
+          };
+        MG.rt = 9;
+      };
+      mg.addEventListener("pointerdown", (e) => {
+        if (!MG || MG.res) return;
+        ensureAudio();
+        const p = mgPos(e);
+        if (MG.kind === "wires") {
+          for (let i = 0; i < 5; i++) {
+            if (Math.hypot(p.x - 90, p.y - (60 + i * 66)) < 22 && MG.con[i] === undefined) {
+              MG.sel = i;
+              return;
+            }
+            if (MG.sel >= 0 && Math.hypot(p.x - 550, p.y - (60 + i * 66)) < 22) {
+              const rightColorIdx = MG.right[i];
+              if (rightColorIdx === MG.sel && !MG.con.some((x) => x === i)) {
+                MG.con[MG.sel] = i;
+                MG.sel = -1;
+                beep(900, 0.06);
+              } else {
+                MG.t += 2;
+                MG.flash = 0.3;
+                MG.sel = -1;
+                beep(200, 0.12);
+              }
+              if (MG.con.filter((x) => x !== undefined).length === 5) finishMG(true);
+              return;
+            }
+          }
+        } else if (MG.kind === "plant") {
+          for (let i = 0; i < 3; i++)
+            if (p.x > 60 + i * 190 && p.x < 60 + i * 190 + 170 && p.y > 330 && p.y < 400)
+              plantBoost(i);
+        } else if (MG.kind === "storm") {
+          MG.tx = p.x;
+        }
+      });
+      mg.addEventListener("pointermove", (e) => {
+        if (MG && MG.kind === "storm" && !MG.res) {
+          MG.tx = mgPos(e).x;
+        }
+      });
+      function plantBoost(i) {
+        if (MG.cd[i] > 0) return;
+        MG.m[i] = Math.min(100, MG.m[i] + 24);
+        MG.cd[i] = 0.15;
+        beep(700 + i * 150, 0.05);
+      }
+      window.addEventListener("keydown", (e) => {
+        if (!MG) return;
+        const k = e.key.toLowerCase();
+        MG.keys[k] = true;
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k))
+          e.preventDefault();
+        if (MG.kind === "plant" && ["1", "2", "3"].includes(k)) plantBoost(+k - 1);
+        if (MG.kind === "maze") {
+          const m = {
+            arrowup: "u",
+            arrowdown: "d",
+            arrowleft: "l",
+            arrowright: "r",
+            w: "u",
+            s: "d",
+            a: "l",
+            d: "r",
+          }[k];
+          if (m) MG.dir = m;
+        }
+      });
+      window.addEventListener("keyup", (e) => {
+        if (!MG) return;
+        const k = e.key.toLowerCase();
+        MG.keys[k] = false;
+        if (MG.kind === "maze") {
+          const m = {
+            arrowup: "u",
+            arrowdown: "d",
+            arrowleft: "l",
+            arrowright: "r",
+            w: "u",
+            s: "d",
+            a: "l",
+            d: "r",
+          }[k];
+          if (m && MG.dir === m) MG.dir = null;
+        }
+      });
 
-window.addEventListener("keydown",e=>{
-const k=e.key.toLowerCase();
-if(["arrowup","arrowdown","arrowleft","arrowright"," ","tab"].includes(k))e.preventDefault();
-if(k==="shift")keys.shift=true;
-else keys[k]=true;
-if(!G||G.over)return;
-ensureAudio();
-if(k==="i"||k==="tab"){if($("ovMenu").classList.contains("on"))closeMenu();else openMenu()}
-else if(k==="escape"){if($("ovMenu").classList.contains("on"))closeMenu()}
-else if(k==="e"){
-actHeld=true;
-if(!G.paused&&landerDist()<5&&!nearPoi(G.p.x,G.p.y,3)){openMenu("term")}
-}
-});
-window.addEventListener("keyup",e=>{
-const k=e.key.toLowerCase();
-if(k==="shift")keys.shift=false;
-else keys[k]=false;
-if(k==="e")actHeld=false;
-});
-cv.addEventListener("pointerdown",e=>{ensureAudio();mineHeld=true});
-window.addEventListener("pointerup",()=>{mineHeld=false});
+      function mgUpdate(dt) {
+        if (!MG) return;
+        if (MG.res) {
+          MG.rt += dt;
+          if (MG.rt > 2.4) applyMG();
+          return;
+        }
+        MG.t += dt;
+        const left = MG.max - MG.t;
+        if (MG.kind === "wires") {
+          MG.flash = Math.max(0, MG.flash - dt);
+          if (left <= 0) finishMG(false);
+        } else if (MG.kind === "plant") {
+          for (let i = 0; i < 3; i++) {
+            MG.m[i] = Math.max(0, MG.m[i] - [7, 5, 9][i] * dt);
+            MG.cd[i] = Math.max(0, MG.cd[i] - dt);
+          }
+          const ok = MG.m.every((v) => v >= 35 && v <= 88);
+          MG.growth = clamp(MG.growth + (ok ? 4.2 : -1.6) * dt, 0, 100);
+          if (left <= 0) {
+            const n = MG.growth >= 85 ? 3 : MG.growth >= 55 ? 2 : MG.growth >= 25 ? 1 : 0;
+            finishMG(n > 0, n);
+          }
+        } else if (MG.kind === "storm") {
+          if (MG.keys.arrowleft || MG.keys.a) MG.tx -= 420 * dt;
+          if (MG.keys.arrowright || MG.keys.d) MG.tx += 420 * dt;
+          MG.tx = clamp(MG.tx, 70, 570);
+          MG.sx += (MG.tx - MG.sx) * Math.min(1, 12 * dt);
+          MG.sp -= dt;
+          if (MG.sp <= 0 && left > 1.5) {
+            MG.parts.push({ x: rnd(40, 600), y: -10, v: 150 + MG.t * 7 });
+            MG.total++;
+            MG.sp = 0.42 - MG.t * 0.008;
+          }
+          MG.parts.forEach((p) => {
+            p.y += p.v * dt;
+          });
+          MG.parts = MG.parts.filter((p) => {
+            if (p.y > 318 && p.y < 334 && Math.abs(p.x - MG.sx) < 68) {
+              MG.blocked++;
+              beep(1000, 0.03, 0.02);
+              return false;
+            }
+            if (p.y > 372) {
+              MG.hit++;
+              return false;
+            }
+            return true;
+          });
+          if (left <= 0) finishMG(true, MG.total ? MG.blocked / MG.total : 0);
+        } else {
+          MG.mt += dt;
+          while (MG.mt >= 0.11) {
+            MG.mt -= 0.11;
+            if (MG.dir) {
+              const d = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[MG.dir];
+              const nx = MG.x + d[0],
+                ny = MG.y + d[1];
+              if (MG.g[ny] && MG.g[ny][nx] === 0) {
+                MG.x = nx;
+                MG.y = ny;
+                const k = nx + "," + ny;
+                if (MG.items[k]) {
+                  MG.got[MG.items[k]]++;
+                  delete MG.items[k];
+                  beep(900, 0.05);
+                }
+              }
+            }
+          }
+          if (left <= 0 || !Object.keys(MG.items).length) finishMG(true, MG.got);
+        }
+      }
+      function mgDraw(t) {
+        if (!MG) return;
+        mc.fillStyle = "#0a0e2a";
+        mc.fillRect(0, 0, 640, 420);
+        const left = Math.max(0, MG.max - MG.t);
+        mc.fillStyle = "#fff";
+        mc.font = "bold 14px sans-serif";
+        mc.textAlign = "left";
+        mc.fillText("⏱️ " + left.toFixed(0) + " s", 10, 20);
+        if (MG.kind === "wires") {
+          if (MG.flash > 0) {
+            mc.fillStyle = "rgba(255,60,60,.2)";
+            mc.fillRect(0, 0, 640, 420);
+          }
+          for (let i = 0; i < 5; i++) {
+            const y = 60 + i * 66;
+            mc.fillStyle = WIRE[i];
+            mc.beginPath();
+            mc.arc(90, y, 18, 0, 7);
+            mc.fill();
+            if (MG.sel === i) {
+              mc.strokeStyle = "#fff";
+              mc.lineWidth = 4;
+              mc.stroke();
+            }
+            mc.fillStyle = WIRE[MG.right[i]];
+            mc.beginPath();
+            mc.arc(550, y, 18, 0, 7);
+            mc.fill();
+          }
+          MG.con.forEach((ri, i) => {
+            if (ri === undefined) return;
+            mc.strokeStyle = WIRE[i];
+            mc.lineWidth = 8;
+            mc.beginPath();
+            mc.moveTo(108, 60 + i * 66);
+            mc.bezierCurveTo(300, 60 + i * 66, 340, 60 + ri * 66, 532, 60 + ri * 66);
+            mc.stroke();
+          });
+        } else if (MG.kind === "plant") {
+          const N = ["💧 Water", "💡 Light", "🧪 Nutrients"],
+            C = ["#5aa9ff", "#ffd166", "#7bd88f"];
+          for (let i = 0; i < 3; i++) {
+            const x = 60 + i * 190;
+            mc.fillStyle = "#12183f";
+            mc.fillRect(x, 50, 170, 260);
+            mc.fillStyle = "rgba(123,216,143,.2)";
+            mc.fillRect(x, 50 + 260 * (1 - 0.88), 170, 260 * 0.53);
+            mc.fillStyle = C[i];
+            mc.fillRect(x + 30, 50 + 260 * (1 - MG.m[i] / 100), 110, (260 * MG.m[i]) / 100);
+            mc.fillStyle = "#fff";
+            mc.textAlign = "center";
+            mc.fillText(N[i] + " (" + (i + 1) + ")", x + 85, 40);
+            mc.fillStyle = MG.cd[i] > 0 ? "#555b7a" : "#ff9f45";
+            mc.fillRect(x, 330, 170, 70);
+            mc.fillStyle = "#1b1200";
+            mc.font = "bold 18px sans-serif";
+            mc.fillText("Boost", x + 85, 372);
+            mc.font = "bold 14px sans-serif";
+          }
+          mc.fillStyle = "#12183f";
+          mc.fillRect(200, 8, 240, 14);
+          mc.fillStyle = "#7bd88f";
+          mc.fillRect(200, 8, (240 * MG.growth) / 100, 14);
+          mc.fillStyle = "#fff";
+          mc.textAlign = "center";
+          mc.fillText("🌱 growth", 320, 20);
+        } else if (MG.kind === "storm") {
+          mc.fillStyle = "rgba(255,150,30,.08)";
+          mc.fillRect(0, 0, 640, 420);
+          MG.parts.forEach((p) => {
+            mc.fillStyle = "#ffd166";
+            mc.beginPath();
+            mc.arc(p.x, p.y, 6, 0, 7);
+            mc.fill();
+            mc.strokeStyle = "rgba(255,210,90,.5)";
+            mc.lineWidth = 2;
+            mc.beginPath();
+            mc.moveTo(p.x, p.y);
+            mc.lineTo(p.x - 3, p.y - 20);
+            mc.stroke();
+          });
+          mc.fillStyle = "#7b4fd0";
+          mc.beginPath();
+          mc.roundRect(MG.sx - 68, 318, 136, 16, 8);
+          mc.fill();
+          mc.fillStyle = "#e8dcff";
+          mc.font = "bold 12px sans-serif";
+          mc.textAlign = "center";
+          mc.fillText("H  H  H", MG.sx, 330);
+          drawMira(mc, 320, 414, 0.62, { mode: "idle", dir: 1 });
+          mc.textAlign = "left";
+          mc.fillStyle = "#fff";
+          mc.font = "bold 14px sans-serif";
+          mc.fillText(`blocked ${MG.blocked} · hit ${MG.hit}`, 500, 20);
+        } else {
+          const MS = 26,
+            ox = 47,
+            oy = 15;
+          for (let y = 0; y < 15; y++)
+            for (let x = 0; x < 21; x++) {
+              mc.fillStyle = MG.g[y][x] ? "#4a4f78" : "#b9bdd0";
+              mc.fillRect(ox + x * MS, oy + y * MS, MS, MS);
+            }
+          mc.font = "18px serif";
+          mc.textAlign = "center";
+          mc.textBaseline = "middle";
+          Object.keys(MG.items).forEach((k) => {
+            const [x, y] = k.split(",").map(Number);
+            mc.fillText(
+              MG.items[k] === "ice" ? "🧊" : MG.items[k] === "ilmenite" ? "🔶" : "🪨",
+              ox + x * MS + MS / 2,
+              oy + y * MS + MS / 2,
+            );
+          });
+          mc.font = "22px serif";
+          mc.fillText("🚙", ox + MG.x * MS + MS / 2, oy + MG.y * MS + MS / 2);
+          mc.textBaseline = "alphabetic";
+        }
+        if (MG.res) {
+          mc.fillStyle = "rgba(0,0,0,.65)";
+          mc.fillRect(0, 150, 640, 120);
+          mc.fillStyle = MG.res.ok ? "#7bd88f" : "#ff5d73";
+          mc.font = "bold 28px sans-serif";
+          mc.textAlign = "center";
+          mc.fillText(MG.res.ok ? "Success!" : "Time's up!", 320, 215);
+        }
+        mc.textAlign = "left";
+      }
 
-const joyEl=$("joy"),knob=$("knob");
-let joyId=null;
-function joyMove(e){
-const r=joyEl.getBoundingClientRect();
-const cx=r.left+r.width/2,cy=r.top+r.height/2;
-let dx=(e.clientX-cx)/(r.width/2),dy=(e.clientY-cy)/(r.height/2);
-const m=Math.hypot(dx,dy);
-if(m>1){dx/=m;dy/=m}
-joy.x=Math.abs(dx)>.15?dx:0;joy.y=Math.abs(dy)>.15?dy:0;
-knob.style.transform=`translate(${dx*50}%,${dy*50}%)`;
-}
-joyEl.addEventListener("pointerdown",e=>{joyId=e.pointerId;joyEl.setPointerCapture(joyId);joyMove(e)});
-joyEl.addEventListener("pointermove",e=>{if(e.pointerId===joyId)joyMove(e)});
-const joyEnd=e=>{if(e.pointerId===joyId){joyId=null;joy.x=0;joy.y=0;knob.style.transform="translate(0,0)"}};
-joyEl.addEventListener("pointerup",joyEnd);
-joyEl.addEventListener("pointercancel",joyEnd);
-const tMine=$("tMine");
-tMine.addEventListener("pointerdown",e=>{e.preventDefault();ensureAudio();mineHeld=true});
-tMine.addEventListener("pointerup",()=>{mineHeld=false});
-tMine.addEventListener("pointerleave",()=>{mineHeld=false});
-$("tAct").addEventListener("pointerdown",e=>{
-e.preventDefault();ensureAudio();actHeld=true;
-if(G&&!G.over&&!G.paused&&landerDist()<5&&!nearPoi(G.p.x,G.p.y,3))openMenu("term");
-});
-$("tAct").addEventListener("pointerup",()=>{actHeld=false});
-$("tAct").addEventListener("pointerleave",()=>{actHeld=false});
-$("tMenu").onclick=()=>openMenu();
-$("bMenu").onclick=()=>{if($("ovMenu").classList.contains("on"))closeMenu();else openMenu()};
-$("bSnd").onclick=()=>{muted=!muted;$("bSnd").textContent=muted?"🔇":"🔊";if(!muted)ensureAudio()};
-if("ontouchstart" in window||navigator.maxTouchPoints>0)document.body.classList.add("touch");
+      let last = 0,
+        hudT = 0;
+      function updateHud(dt) {
+        hudT += dt;
+        if (hudT < 0.1) return;
+        hudT = 0;
+        const n = S.needs;
+        const bar = (l, v, c, low) =>
+          `<div class="bar ${low ? "low" : ""}"><b><span>${l}</span><span>${Math.round(v)}</span></b><div class="bt"><i style="width:${v}%;background:${c}"></i></div></div>`;
+        $("bars").innerHTML =
+          bar("🍲 Hunger", n.hunger, "#7bd88f", n.hunger < 25) +
+          bar("⚡ Energy", n.energy, "#ffd166", n.energy < 25) +
+          bar("💛 Mood", n.mood, "#ff7aa8", n.mood < 30) +
+          `<div style="font-size:.9em">☢️ Dose <b>${S.dose.toFixed(1)}</b> / ${DLIM} mSv · 🛡️ Shield ${shieldVal().toFixed(1)}</div>`;
+        const c = CHAPTERS[S.ch];
+        $("info").innerHTML =
+          `<small>PHASE 2 · LUNAR BASE · ${(S.plan ? LEVELS[S.plan.level] || lvNow() : lvNow()).n.toUpperCase()} LEVEL</small><br><b>${S.name}</b> · Day ${Math.floor(S.t / DAYLEN) + 1} · ⏳ ${Math.max(0, missionLeft() / DAYLEN).toFixed(1)}d left · ◈ ${S.units} · 🍲 ${S.rations}<br>${c ? `<small>CHAPTER ${S.ch + 1}: ${c.t}</small><br>${c.goal}` : S.ch >= CHAPTERS.length ? "<small>Outpost established. Keep building!</small>" : "<small>Plan your mission</small>"}<br><small>🏠 ${Object.keys(S.blocks).length} blocks: −${sizePenalty().toFixed(1)} days of mission time</small>`;
+        let b = "";
+        if (R.fault)
+          b += `<div class="wc">🔧 FAULT: ${R.fault.t} <button data-b="wires">Repair</button></div>`;
+        const st = R.storm;
+        if (st.state === 1)
+          b += `<div class="wc">☢️ STORM IN ${Math.ceil(st.t)} s <button data-b="storm">Shield drill</button></div>`;
+        if (st.state === 2)
+          b += `<div class="wc">☢️ STORM ACTIVE ${Math.ceil(st.t)} s${st.drilled ? "" : ' <button data-b="storm">Shield drill</button>'}</div>`;
+        if (n.hunger < 20) b += `<div class="ww">🍲 ${S.name} is starving</div>`;
+        if (n.energy < 15) b += `<div class="ww">😴 ${S.name} is exhausted</div>`;
+        if ($("banners").dataset.h !== b) {
+          $("banners").innerHTML = b;
+          $("banners").dataset.h = b;
+        }
+        $("toast").innerHTML = R.toasts.map((t) => `<div>${t.m}</div>`).join("");
+      }
+      $("banners").onclick = (e) => {
+        const b = e.target.closest("button");
+        if (b && !R.paused) {
+          startMG(b.dataset.b);
+        }
+      };
 
-$("bGo").onclick=()=>{
-$("ovIntro").classList.remove("on");
-ensureAudio();
-showStory(0);
-};
+      function loop(ts) {
+        const dt = Math.min(0.05, (ts - last) / 1000) * A.speed;
+        last = ts;
+        update(dt);
+        mgUpdate(dt);
+        drawHub(ts);
+        if ($("prev")) drawPrev();
+        if (MG) mgDraw(ts);
+        updateHud(dt);
+        requestAnimationFrame(loop);
+      }
 
-async function loadDonki(){
-try{
-const end=new Date(),start=new Date(Date.now()-30*864e5);
-const f=x=>x.toISOString().slice(0,10);
-const r=await fetch(`https://api.nasa.gov/DONKI/CME?startDate=${f(start)}&endDate=${f(end)}&api_key=DEMO_KEY`);
-if(!r.ok)throw new Error("x");
-const j=await r.json();
-const list=j.map(e=>{const a=e.cmeAnalyses&&e.cmeAnalyses[0];return a&&a.speed?{id:e.activityID,speed:a.speed}:null}).filter(Boolean);
-if(!list.length)throw new Error("x");
-const best=list.reduce((a,b)=>b.speed>a.speed?b:a);
-LIVE.ok=true;LIVE.id=best.id;LIVE.speed=best.speed;
-}catch(e){LIVE.ok=false}
-}
+      $("bar").onclick = (e) => {
+        const b = e.target.closest("button");
+        if (b) doAct(b.dataset.a);
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) writeSave();
+      });
+      window.addEventListener("beforeunload", writeSave);
 
-newGame();
-loadDonki();
-requestAnimationFrame(loop);
-</script>
-</body>
+      function showTitle() {
+        const has = S.started;
+        $("titleBox").innerHTML =
+          `<h2>🌙 Lunar Base Junior</h2><p>A life-sim on the Moon. Create your astronaut, plan the mission, fly to the Moon, and look after your crew at Hopper Base near the lunar south pole, where NASA plans to land humans with Artemis.</p><ul><li>🎨 Design your astronaut: name, skin, hair, outfit.</li><li>🚀 Plan the ship: every extra module adds weight, travel time and risk.</li><li>🍲😴💛 Keep your astronaut fed, rested and happy.</li><li>🧱 Build and decorate the base block by block.</li><li>🎯 Play repair, plant care, storm and maze missions, and explore the surface.</li><li>📡 Face real NASA space weather and learn the real science behind it.</li></ul>${has ? `<button id="bCont">▶ Continue as ${S.name}</button> ` : ""}<button id="bNew" class="${has ? "alt" : ""}">New game</button>`;
+        if (has)
+          $("bCont").onclick = () => {
+            $("ovTitle").classList.remove("on");
+            ensureAudio();
+            R.paused = false;
+            if (!S.planned && !S.plan && S.ch < 0) {
+              openPlan();
+              return;
+            }
+            if (S.ch === 0 && !S.flags.intro) {
+              S.flags.intro = 1;
+              showChapter(0);
+            }
+          };
+        $("bNew").onclick = () => {
+          if (has && !confirm("Start over? Your current base will be lost.")) return;
+          const keep = has
+            ? {
+                name: S.name,
+                suit: S.suit,
+                visor: S.visor,
+                acc: S.acc,
+                skin: S.skin,
+                hair: S.hair,
+                hairCol: S.hairCol,
+                eyes: S.eyes,
+                outfit: S.outfit,
+              }
+            : {};
+          S = Object.assign(defSave(), keep);
+          S.started = true;
+          PL = null;
+          $("ovTitle").classList.remove("on");
+          ensureAudio();
+          R.newStyle = true;
+          openStyle();
+        };
+      }
+      function reportExp() {
+        const e = S.lastExp;
+        if (!e) return;
+        S.lastExp = null;
+        toast(
+          `🚀 Expedition complete: ${e.items} items, ${e.units} units, ${e.disc} new discoveries.`,
+          6000,
+        );
+        writeSave();
+      }
+      if (S.started && S.lastExp && !S.evac) {
+        $("ovTitle").classList.remove("on");
+        R.paused = false;
+        reportExp();
+      } else showTitle();
+      if (S.started && S.evac) {
+        S.evac = false;
+        evacuate();
+      }
+
+      async function loadDonki() {
+        try {
+          const end = new Date(),
+            start = new Date(Date.now() - 30 * 864e5);
+          const f = (x) => x.toISOString().slice(0, 10);
+          const r = await fetch(
+            `https://api.nasa.gov/DONKI/CME?startDate=${f(start)}&endDate=${f(end)}&api_key=${APIKEY}`,
+          );
+          if (!r.ok) throw new Error("x");
+          const j = await r.json();
+          const list = j
+            .map((e) => {
+              const a = e.cmeAnalyses && e.cmeAnalyses[0];
+              return a && a.speed ? { id: e.activityID, speed: a.speed, t: e.startTime } : null;
+            })
+            .filter(Boolean);
+          if (!list.length) throw new Error("x");
+          const best = list.reduce((a, b) => (b.speed > a.speed ? b : a));
+          LIVE.ok = true;
+          LIVE.id = best.id;
+          LIVE.speed = best.speed;
+          LIVE.cmes = list
+            .slice()
+            .sort((a, b) => b.speed - a.speed)
+            .slice(0, 6);
+        } catch (e) {
+          LIVE.ok = false;
+        }
+      }
+
+      function openA11y() {
+        const tg = (k, label, desc) =>
+          `<div class="row"><div><b>${label}</b><small>${desc}</small></div><button data-ax="${k}" aria-pressed="${!!A[k]}" class="${A[k] ? "on" : "alt"}">${A[k] ? "ON" : "OFF"}</button></div>`;
+        openModal(
+          head("♿ Accessibility") +
+            `<div class="row"><div><b>Game speed</b><small>Slows everything down, including timers and minigames. Take your time.</small></div><div>${[
+              0.5, 0.75, 1,
+            ]
+              .map(
+                (v) =>
+                  `<button data-ax="speed" data-v="${v}" aria-pressed="${A.speed === v}" class="${A.speed === v ? "on" : "alt"}">${v}×</button>`,
+              )
+              .join(" ")}</div></div>` +
+            `<div class="row"><div><b>Volume</b><small>Zero is silent.</small></div><input type="range" id="volr" min="0" max="1" step="0.1" value="${A.vol}" aria-label="Volume"></div>` +
+            tg("rm", "Reduce motion", "Fewer flashes, no storm streaks, calmer animations.") +
+            tg("hc", "High contrast", "Stronger borders and colors.") +
+            tg("big", "Large text", "Bigger text everywhere.") +
+            tg("cap", "Sound captions", "Show text for important sounds, like alarms.") +
+            tg(
+              "toggleMine",
+              "Toggle mining (expedition)",
+              "Click once to start the mining beam and again to stop, instead of holding.",
+            ) +
+            `<div class="real">Keyboard: Tab and Shift+Tab move between buttons, Enter or Space activates, Esc closes menus. Shortcuts at the base: E eat, Z sleep, P pet, M missions, C craft, B build, S style, X expedition, W space weather, A accessibility. Important events are announced to screen readers. These settings are shared with the expedition and saved in this browser.</div>`,
+        );
+        $("volr").oninput = (e) => {
+          A.vol = +e.target.value;
+          saveA();
+        };
+      }
+      window.addEventListener("keydown", (e) => {
+        const tag = (e.target && e.target.tagName) || "";
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        const k = e.key.toLowerCase();
+        if (k === "escape" && $("ovMenu").classList.contains("on")) {
+          closeModal();
+          return;
+        }
+        if (
+          (k === "enter" || k === " ") &&
+          e.target &&
+          e.target.classList &&
+          e.target.classList.contains("pc")
+        ) {
+          e.preventDefault();
+          e.target.click();
+          return;
+        }
+        if (
+          (k === "enter" || k === " ") &&
+          e.target &&
+          e.target.classList &&
+          e.target.classList.contains("sw")
+        ) {
+          e.preventDefault();
+          e.target.click();
+          return;
+        }
+        if (R.paused || MG || e.ctrlKey || e.metaKey || e.altKey) return;
+        const map = {
+          e: "eat",
+          z: "sleep",
+          p: "pet",
+          m: "missions",
+          c: "craft",
+          b: "build",
+          s: "style",
+          x: "exp",
+          w: "wx",
+          a: "a11y",
+        };
+        if (map[k]) {
+          e.preventDefault();
+          doAct(map[k]);
+        }
+      });
+      document.querySelectorAll(".overlay").forEach((o) => {
+        o.setAttribute("role", "dialog");
+        o.setAttribute("aria-modal", "true");
+        new MutationObserver(() => {
+          if (o.classList.contains("on")) {
+            setTimeout(() => {
+              const b = o.querySelector("button,input");
+              if (b) b.focus();
+              const h = o.querySelector("h2");
+              if (h) announce(h.textContent);
+            }, 60);
+          }
+        }).observe(o, { attributes: true, attributeFilter: ["class"] });
+      });
+      async function loadTech() {
+        try {
+          const raw = localStorage.getItem("lbj_tech");
+          if (raw) {
+            const o = JSON.parse(raw);
+            if (Date.now() - o.at < 12 * 3600 * 1000 && o.items.length) {
+              LIVE.tech = o.items;
+              return;
+            }
+          }
+        } catch (e) {}
+        try {
+          const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+          const r = await fetch(
+            "https://api.nasa.gov/techport/api/projects?updatedSince=" +
+              since +
+              "&api_key=" +
+              APIKEY,
+          );
+          if (!r.ok) return;
+          const j = await r.json();
+          const ids = j.projects
+            .map((p) => p.projectId)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 8);
+          const items = [];
+          for (const id of ids) {
+            if (items.length >= 3) break;
+            const d = await fetch(
+              "https://api.nasa.gov/techport/api/projects/" + id + "?api_key=" + APIKEY,
+            );
+            if (!d.ok) continue;
+            const p = (await d.json()).project;
+            if (!p || !p.title) continue;
+            items.push({
+              id: p.projectId,
+              title: p.title,
+              org: p.leadOrganization && p.leadOrganization.organizationName,
+              trl: p.trlCurrent,
+            });
+          }
+          LIVE.tech = items;
+          localStorage.setItem("lbj_tech", JSON.stringify({ at: Date.now(), items }));
+          if (PL && $("ovPlan").classList.contains("on")) renderPlan();
+        } catch (e) {}
+      }
+      function techBox() {
+        if (!LIVE.tech || !LIVE.tech.length) return "";
+        return `<div class="real">🛰️ <b style="color:var(--txt)">Real NASA technology in development (TechPort):</b><br>${LIVE.tech
+          .map(
+            (t) =>
+              `• ${String(t.title).replace(/</g, "&lt;")}${t.org ? " · " + t.org : ""}${t.trl ? " · TRL " + t.trl : ""}`,
+          )
+          .join(
+            "<br>",
+          )}<br><small>Real projects updated in the last two weeks. Space agencies test technologies like these for life support, shielding and power.</small></div>`;
+      }
+      applyLevel();
+      loadDonki();
+      loadWx();
+      loadTech();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
 </html>
