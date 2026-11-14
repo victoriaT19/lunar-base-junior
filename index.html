@@ -440,8 +440,6 @@
       * {
         border-radius: 0 !important;
       }
-      canvas#cv,
-      #mg,
       .prev,
       .pix canvas,
       .ico,
@@ -845,7 +843,7 @@
   <body>
     <div id="wrap">
       <div id="stage">
-        <canvas id="cv" width="480" height="270"></canvas>
+        <canvas id="cv" width="1920" height="1080"></canvas>
         <div class="hud" id="bars"></div>
         <div class="hud" id="info"></div>
         <div class="hud" id="banners"></div>
@@ -883,7 +881,7 @@
             >
               <b id="mgTitle"></b><button class="alt" id="mgQuit">Give up</button>
             </div>
-            <canvas id="mg" width="640" height="420"></canvas>
+            <canvas id="mg" width="1280" height="840"></canvas>
             <div id="mgHelp" style="color: var(--mut); font-size: 0.85em; margin-top: 6px"></div>
           </div>
         </div>
@@ -905,7 +903,7 @@
       const rnd = (a, b) => a + Math.random() * (b - a);
       const cv = $("cv"),
         ctx = cv.getContext("2d");
-      ctx.scale(0.5, 0.5);
+      ctx.scale(2, 2);
       ctx.imageSmoothingEnabled = false;
       const GCR = 1.37,
         DLIM = 250;
@@ -3533,6 +3531,7 @@
       let MG = null;
       const mg = $("mg"),
         mc = mg.getContext("2d");
+      mc.scale(2, 2);
       const WIRE = ["#ff5d73", "#4cc9f0", "#ffd166", "#7bd88f", "#b388ff"];
       function mgPos(e) {
         const r = mg.getBoundingClientRect();

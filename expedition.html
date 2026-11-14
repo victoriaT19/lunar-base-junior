@@ -374,8 +374,6 @@
       * {
         border-radius: 0 !important;
       }
-      canvas#cv,
-      #mg,
       .prev,
       .pix canvas,
       .ico,
@@ -773,7 +771,7 @@
   <body>
     <div id="wrap">
       <div id="stage">
-        <canvas id="cv" width="640" height="360"></canvas>
+        <canvas id="cv" width="1920" height="1080"></canvas>
         <div class="hud" id="stats"></div>
         <div class="hud" id="obj"></div>
         <div class="hud" id="units"></div>
@@ -847,7 +845,7 @@
       const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
       const cv = $("cv"),
         ctx = cv.getContext("2d");
-      ctx.scale(2 / 3, 2 / 3);
+      ctx.scale(2, 2);
       ctx.imageSmoothingEnabled = false;
       const DAY = 20;
       const GCR = 1.37,
