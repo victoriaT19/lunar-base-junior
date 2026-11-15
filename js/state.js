@@ -112,7 +112,7 @@ function payCost(cost, sign) {
 }
 function costTxt(cost) {
   return Object.keys(cost)
-    .map((k) => cost[k] + " " + (k === "units" ? "units" : ITEMS[k].n))
+    .map((k) => cost[k] + " " + tr(k === "units" ? "units" : ITEMS[k].n))
     .join(", ");
 }
 

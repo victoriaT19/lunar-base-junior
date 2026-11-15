@@ -62,7 +62,7 @@ function openCraft() {
       invHtml() +
       RC.map(
         (r, i) =>
-          `<div class="row"><div><b>${r.n}</b><small>Needs ${costTxt(r.cost)} → ${r.fx}</small></div><button data-craft="${i}" ${afford(r.cost) ? "" : "disabled"}>Craft</button></div>`,
+          `<div class="row"><div><b>${r.n}</b><small>${tr("Needs")} ${costTxt(r.cost)} → ${tr(r.fx)}</small></div><button data-craft="${i}" ${afford(r.cost) ? "" : "disabled"}>Make</button></div>`,
       ).join("") +
       `<div class="row"><div><b>Install polymer plate in suit</b><small>Uses 1 Polymer plate. +20 hazard protection on expeditions. Installed: ${S.polyL}/5</small></div><button data-inst="1" ${S.inv.polymer >= 1 && S.polyL < 5 ? "" : "disabled"}>Install</button></div>` +
       `<h3 style="margin:10px 0 4px">Supply store</h3>` +
