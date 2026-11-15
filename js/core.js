@@ -96,7 +96,7 @@ function defSave() {
     brows: 0,
     mouth: 0,
     art: "toon",
-    char: "hero",
+    char: "short",
     lang: "en",
     level: 1,
     preset: "classic",

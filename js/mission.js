@@ -58,7 +58,7 @@ function tickLife(dt) {
   else S.starvT = 0;
   if (S.o2 <= 0) return endGame("o2");
   if (S.hull <= 0) return endGame("hull");
-  if (S.starvT > 30) return endGame("food");
+  if (S.starvT > 60) return endGame("food");
 }
 
 function endGame(kind) {

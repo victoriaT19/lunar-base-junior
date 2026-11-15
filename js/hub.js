@@ -225,7 +225,7 @@ function update(dt) {
   n.hunger = Math.max(
     0,
     n.hunger -
-      0.5 *
+      0.28 *
         dk *
         fm *
         dt *

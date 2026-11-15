@@ -72,8 +72,8 @@ const NAMES_LIST = [
   "Teo",
 ];
 const CHARN = {
-  en: ["Curly", "Spiky", "Wild blue", "Pink punk", "Beanie", "Long blonde"],
-  pt: ["Cacheado", "Espetado", "Azul rebelde", "Rosa punk", "Gorro", "Loiro longo"],
+  en: ["Spiky", "Curly", "Long", "Bun", "Mohawk"],
+  pt: ["Espetado", "Cacheado", "Longo", "Coque", "Moicano"],
 };
 const TXT = {
   en: {
@@ -358,23 +358,8 @@ function renderIcons() {
             }
         });
       }
-    } else if (key === "preset") {
-      const im = AIMG.bust[v];
-      ok = fit(im, 0, 0, im ? im.naturalWidth : 1, im ? im.naturalHeight : 1);
     } else if (key === "char") {
-      const look = Object.assign({}, S, { char: v, acc: 0 });
-      const cc = charCanvas(look);
-      if (cc) {
-        const m = ART[v];
-        const side = m.d * 2.6;
-        fit(
-          cc,
-          Math.round(m.ex + CMX - side / 2),
-          Math.round(m.ey + CMT - side * 0.55),
-          Math.round(side),
-          Math.round(side),
-        );
-      } else ok = false;
+      headIcon(c2, Object.assign({}, S, { char: v, acc: 0 }));
     } else if (key === "acc") {
       if (+v === 0) {
         c2.strokeStyle = "#9aa3c8";
@@ -384,26 +369,7 @@ function renderIcons() {
         c2.moveTo(11, 29);
         c2.lineTo(29, 11);
         c2.stroke();
-      } else {
-        const ck =
-          S.char === "nerd" && +v === 1
-            ? "hero"
-            : S.char === "explorer" && +v === 3
-              ? "hero"
-              : charOf(S);
-        const cc = charCanvas(Object.assign({}, S, { char: ck, acc: +v }));
-        if (cc) {
-          const m = ART[ck];
-          const side = m.d * 3;
-          fit(
-            cc,
-            Math.round(m.ex + CMX - side / 2),
-            Math.round(m.ey + CMT - side * 0.6),
-            Math.round(side),
-            Math.round(side),
-          );
-        } else ok = false;
-      }
+      } else headIcon(c2, Object.assign({}, S, { acc: +v }));
     }
     if (!ok) setTimeout(renderIcons, 120);
   });
@@ -450,7 +416,7 @@ function drawPrev() {
       for (let x = -rx; x <= rx; x += 4)
         if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) Q(120 + x, 304 + y, 4, 4, col);
   });
-  drawMira(c, 120, 318, 1, { mode: "idle", dir: 1, k: 3.6 });
+  drawMira(c, 120, 312, 1, { mode: "idle", dir: 1, k: 3.2 });
 }
 function openStory() {
   const rows = CHAPTERS.map(
