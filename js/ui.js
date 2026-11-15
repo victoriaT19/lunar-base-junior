@@ -17,6 +17,11 @@ function invHtml() {
     )
     .join("")}<span>🍲 ${S.rations}</span><span>◈ ${S.units}</span></div>`;
 }
+function srcHtml() {
+  return `<details class="help" open><summary>📍 Where to find each material</summary><ul>${Object.keys(ITEMS)
+    .map((k) => `<li><b style="color:${ITEMS[k].c === "#3a3a4a" ? "#9aa0b8" : ITEMS[k].c}">${ITEMS[k].n}</b>: ${ITEMS[k].src}</li>`)
+    .join("")}</ul></details>`;
+}
 function helpBox(title, lines) {
   return `<details class="help"><summary>${title}</summary><ul>${lines.map((l) => `<li>${l.replace(/<[^>]+>/g, "")}</li>`).join("")}</ul></details>`;
 }
@@ -60,6 +65,7 @@ function openCraft() {
         "Parts are used in <b>Build</b>: for example, a 🛡️ shield wall needs a polymer plate and a ☀️ solar panel needs a solar cell.",
       ]) +
       invHtml() +
+      srcHtml() +
       RC.map(
         (r, i) =>
           `<div class="row"><div><b>${r.n}</b><small>${tr("Needs")} ${costTxt(r.cost)} → ${tr(r.fx)}</small></div><button data-craft="${i}" ${afford(r.cost) ? "" : "disabled"}>Make</button></div>`,

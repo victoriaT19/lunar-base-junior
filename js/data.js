@@ -1,11 +1,11 @@
 const ITEMS = {
-  regolith: { n: "Regolith", c: "#b9bdd0" },
-  ilmenite: { n: "Ilmenite", c: "#ff9f45" },
-  carbon: { n: "Carbon", c: "#3a3a4a" },
-  ice: { n: "Water ice", c: "#6fe3ff" },
-  metal: { n: "Metal plate", c: "#cfd6ff" },
-  polymer: { n: "Polymer plate", c: "#b388ff" },
-  solar: { n: "Solar cell", c: "#2a56d8" },
+  regolith: { src: "Expedition: open ground, everywhere. Also the 🚙 rover.", n: "Regolith", c: "#b9bdd0" },
+  ilmenite: { src: "Expedition: rocky rims around craters. Also the 🚙 rover.", n: "Ilmenite", c: "#ff9f45" },
+  carbon: { src: "Expedition: inside craters (sunny or dark).", n: "Carbon", c: "#3a3a4a" },
+  ice: { src: "Expedition: only in dark craters (they drain suit energy). Also the 🚙 rover.", n: "Water ice", c: "#6fe3ff" },
+  metal: { src: "Craft from 3 Ilmenite, or buy in the store.", n: "Metal plate", c: "#cfd6ff" },
+  polymer: { src: "Craft from 3 Water ice + 2 Carbon, or buy in the store.", n: "Polymer plate", c: "#b388ff" },
+  solar: { src: "Craft from metal, carbon and regolith, or buy in the store.", n: "Solar cell", c: "#2a56d8" },
 };
 const BLK = {
   brick: { n: "Regolith brick", e: "🧱", cost: { regolith: 2 }, shield: 0.3 },
