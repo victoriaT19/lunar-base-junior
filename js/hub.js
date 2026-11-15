@@ -758,6 +758,11 @@ const SHORTN = {
   antenna: "Antenna",
   flag: "Flag",
   table: "Table",
+  "mod:sleep": "Bedroom",
+  "mod:garden": "Garden",
+  "mod:wall": "H wall",
+  "mod:cozy": "Lounge",
+  "mod:yard": "Sun farm",
 };
 const COSTI = {
   regolith: "🪨",
@@ -786,7 +791,7 @@ function buildPalette() {
     ...Object.keys(MODS).map((k) => ({
       k,
       e: MODS[k].e,
-      n: MODS[k].n,
+      n: SHORTN[k] || MODS[k].n,
       full: MODS[k].n + " (room)",
       cost: modCost(MODS[k]),
     })),
@@ -794,11 +799,11 @@ function buildPalette() {
   ];
   const sel = all.find((a) => a.k === R.tool);
   $("pal").innerHTML =
-    `<div class="palh"><b>🧱 BUILD</b><span>${sel ? sel.e + " " + sel.full : "Pick a piece ➜"}</span><small>${sel ? (sel.cost ? costIcons(sel.cost) : "gives it back") : "then tap the base"}</small><small>🏠 Bigger base: −${sizePenalty().toFixed(1)} days</small></div>` +
+    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><small>${sel ? (sel.cost ? "Cost: " + costIcons(sel.cost) : "Gives it back") : "then tap the base"}</small><small>🏠 −${sizePenalty().toFixed(1)} days</small></div>` +
     all
       .map(
         (a) =>
-          `<button data-tool="${a.k}" class="${R.tool === a.k ? "on" : ""} ${a.cost && !afford(a.cost) ? "no" : ""}" title="${a.full}${a.cost ? ": " + costTxt(a.cost) : ""}" aria-label="${a.full}${a.cost ? ", costs " + costTxt(a.cost) : ""}"><i aria-hidden="true">${a.e}</i><span>${a.n}</span><small>${a.cost ? costIcons(a.cost) : ""}</small></button>`,
+          `<button data-tool="${a.k}" class="${R.tool === a.k ? "on" : ""} ${a.cost && !afford(a.cost) ? "no" : ""}" title="${a.full}${a.cost ? ": " + costTxt(a.cost) : ""}" aria-label="${a.full}${a.cost ? ", costs " + costTxt(a.cost) : ""}"><i aria-hidden="true">${a.e}</i><span>${a.n}</span><small>${a.cost ? costIcons(a.cost) : "refund"}</small></button>`,
       )
       .join("") +
     `<button class="palx" data-x="1" aria-label="Close build mode" title="Close">✕</button>`;
