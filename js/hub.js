@@ -245,7 +245,7 @@ function update(dt) {
   n.hunger = Math.max(
     0,
     n.hunger -
-      0.28 *
+      0.18 *
         dk *
         fm *
         dt *
@@ -340,7 +340,7 @@ function update(dt) {
     R.mt -= dt;
     if (R.mt <= 0) {
       if (R.mode === "eat") {
-        n.hunger = Math.min(100, n.hunger + 45);
+        n.hunger = Math.min(100, n.hunger + 55);
         n.mood = Math.min(100, n.mood + 3);
         S.flags.ate = true;
       }
