@@ -60,13 +60,24 @@ $("banners").onclick = (e) => {
 function loop(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000) * A.speed;
   last = ts;
-  update(dt);
-  mgUpdate(dt);
-  drawHub(ts);
-  if ($("prev")) drawPrev();
-  if (MG) mgDraw(ts);
-  updateHud(dt);
   requestAnimationFrame(loop);
+  const safe = (f) => {
+    try {
+      f();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  safe(() => update(dt));
+  safe(() => mgUpdate(dt));
+  safe(() => drawHub(ts));
+  safe(() => {
+    if ($("prev")) drawPrev();
+  });
+  safe(() => {
+    if (MG) mgDraw(ts);
+  });
+  safe(() => updateHud(dt));
 }
 
 $("bar").onclick = (e) => {

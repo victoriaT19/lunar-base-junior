@@ -10,7 +10,7 @@
       rel="stylesheet"
     />
     <title>Lunar Base Junior</title>
-    <link rel="stylesheet" href="css/style.css?v=9" />
+    <link rel="stylesheet" href="css/style.css?v=11" />
   </head>
   <body>
     <div id="wrap">
@@ -22,18 +22,28 @@
         <div class="hud" id="toast"></div>
         <div id="pal"></div>
         <div id="bar">
-          <button data-a="eat">🍲 Eat</button>
-          <button data-a="sleep">😴 Sleep</button>
-          <button data-a="pet">🤖 Hi KAI</button>
-          <button data-a="missions">🎯 Missions</button>
-          <button data-a="craft">🔧 Craft</button>
-          <button data-a="build" id="bBuild">🧱 Build</button>
-          <button data-a="style">🎨 Style</button>
-          <button data-a="exp">🚀 Expedition</button>
-          <button data-a="a11y" class="alt" aria-label="Accessibility settings">♿ Access</button>
-          <button data-a="wx" class="alt">📡 Space weather</button>
-          <button data-a="story" class="alt">📖 Story</button>
-          <button data-a="snd" class="alt" id="bSnd" aria-label="Toggle sound">🔊</button>
+          <div class="bmain">
+            <button data-a="eat"><i aria-hidden="true">🍲</i><span>Eat</span></button>
+            <button data-a="sleep"><i aria-hidden="true">😴</i><span>Sleep</span></button>
+            <button data-a="pet"><i aria-hidden="true">🤖</i><span>Hi KAI</span></button>
+            <button data-a="missions"><i aria-hidden="true">🎯</i><span>Missions</span></button>
+            <button data-a="craft"><i aria-hidden="true">🔧</i><span>Craft</span></button>
+            <button data-a="build" id="bBuild">
+              <i aria-hidden="true">🧱</i><span>Build</span>
+            </button>
+            <button data-a="exp"><i aria-hidden="true">🚀</i><span>Go out</span></button>
+          </div>
+          <div class="bside">
+            <button data-a="style" title="Change your look" aria-label="Change your look">
+              🎨
+            </button>
+            <button data-a="story" title="Story" aria-label="Story">📖</button>
+            <button data-a="wx" title="Space weather" aria-label="Space weather">📡</button>
+            <button data-a="a11y" title="Accessibility" aria-label="Accessibility settings">
+              ♿
+            </button>
+            <button data-a="snd" id="bSnd" title="Sound" aria-label="Toggle sound">🔊</button>
+          </div>
         </div>
 
         <div id="sr" class="sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -72,15 +82,15 @@
     </div>
 
     <script src="art/art.js?v=2"></script>
-    <script src="js/core.js?v=9"></script>
-    <script src="js/data.js?v=9"></script>
-    <script src="js/state.js?v=9"></script>
-    <script src="js/character.js?v=9"></script>
-    <script src="js/hub.js?v=9"></script>
-    <script src="js/ui.js?v=9"></script>
-    <script src="js/plan.js?v=9"></script>
-    <script src="js/minigames.js?v=9"></script>
-    <script src="js/mission.js?v=9"></script>
-    <script src="js/main.js?v=9"></script>
+    <script src="js/core.js?v=11"></script>
+    <script src="js/data.js?v=11"></script>
+    <script src="js/state.js?v=11"></script>
+    <script src="js/character.js?v=11"></script>
+    <script src="js/hub.js?v=11"></script>
+    <script src="js/ui.js?v=11"></script>
+    <script src="js/plan.js?v=11"></script>
+    <script src="js/minigames.js?v=11"></script>
+    <script src="js/mission.js?v=11"></script>
+    <script src="js/main.js?v=11"></script>
   </body>
 </html>

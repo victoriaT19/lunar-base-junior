@@ -256,6 +256,9 @@ function openStyle() {
     S.name = e.target.value.slice(0, 12) || "Mira";
   };
   renderIcons();
+  drawPrev();
+  setTimeout(drawPrev, 150);
+  setTimeout(drawPrev, 600);
 }
 function renderIcons() {
   document.querySelectorAll("#menuBox canvas[data-ic]").forEach((cv2) => {
