@@ -533,37 +533,55 @@ function drawHub(t) {
   ctx.drawImage(RB, 0, 0, W, H);
   drawLabels(t);
 }
+function heldId() {
+  if (R.tool === "move") return R.holding ? R.holding.id : null;
+  if (R.tool.startsWith("stash:")) return R.tool.slice(6);
+  return R.tool;
+}
+function pickMode() {
+  return R.tool === "erase" || R.tool === "store" || (R.tool === "move" && !R.holding);
+}
+function dropHeld() {
+  if (!R.holding) return;
+  const h = R.holding;
+  R.holding = null;
+  if (!S.blocks[h.from]) S.blocks[h.from] = h.id;
+  else {
+    S.stash = S.stash || {};
+    S.stash[h.id] = (S.stash[h.id] || 0) + 1;
+  }
+  writeSave();
+}
 function drawHover(t) {
   const hv = R.hover;
+  const id = heldId();
+  const pick = pickMode();
   const wallTool =
-    WALLI.has(R.tool) ||
-    (R.tool.startsWith("mod:") && MODS[R.tool].cells.every((x) => WALLI.has(x[2])));
+    WALLI.has(id) ||
+    (String(id).startsWith("mod:") && MODS[id].cells.every((x) => WALLI.has(x[2])));
+  const freeSpot = (k) => !S.blocks[k] && !RESV2.has(k);
   if (hv.k.includes(":")) {
     const [side, i] = hv.k.split(":");
-    const ok =
-      R.tool === "erase"
-        ? !!S.blocks[hv.k] && !RESV2.has(hv.k)
-        : wallTool && !S.blocks[hv.k] && !RESV2.has(hv.k);
+    const ok = pick ? !!S.blocks[hv.k] && !RESV2.has(hv.k) : wallTool && freeSpot(hv.k);
     wallFace(side, +i, (w, Q) => {
       Q(0, -WALLH, w, WALLH, ok ? "rgba(123,216,143,.35)" : "rgba(255,93,115,.35)");
-      if (ok && R.tool !== "erase" && WALLI.has(R.tool)) {
+      if (ok && !pick && WALLI.has(id)) {
         ctx.globalAlpha = 0.75;
-        drawWallItem(R.tool, w, t, Q);
+        drawWallItem(id, w, t, Q);
         ctx.globalAlpha = 1;
       }
     });
   } else {
     const [c, r] = hv.k.split(",").map(Number);
-    const ok =
-      R.tool === "erase" ? !!S.blocks[hv.k] : !wallTool && !S.blocks[hv.k] && !RESV2.has(hv.k);
+    const ok = pick ? !!S.blocks[hv.k] && !RESV2.has(hv.k) : !wallTool && freeSpot(hv.k);
     poly(
       [iso(c, r), iso(c + 1, r), iso(c + 1, r + 1), iso(c, r + 1)],
       ok ? "rgba(123,216,143,.4)" : "rgba(255,93,115,.4)",
       "#ffffff",
     );
-    if (ok && R.tool !== "erase" && !wallTool && BLK[R.tool]) {
+    if (ok && !pick && !wallTool && BLK[id]) {
       ctx.globalAlpha = 0.75;
-      floorItemDraw(R.tool, c, r, t);
+      floorItemDraw(id, c, r, t);
       ctx.globalAlpha = 1;
     }
   }
@@ -608,6 +626,56 @@ function freeFloorNear(c, r) {
 function placeAt(hv) {
   const k = hv.k;
   if (!k) return;
+  if (R.tool === "store" || (R.tool === "move" && !R.holding)) {
+    if (!S.blocks[k] || RESV2.has(k)) {
+      toast(
+        R.tool === "store" ? "📦 Tap a piece to store it." : "✋ Tap a piece to pick it up.",
+        1500,
+      );
+      return;
+    }
+    const id = S.blocks[k];
+    delete S.blocks[k];
+    if (R.tool === "store") {
+      S.stash = S.stash || {};
+      S.stash[id] = (S.stash[id] || 0) + 1;
+      toast("📦 Stored: " + BLK[id].n, 1500);
+    } else R.holding = { id, from: k };
+    beep(650, 0.05);
+    writeSave();
+    buildPalette();
+    return;
+  }
+  if ((R.tool === "move" && R.holding) || R.tool.startsWith("stash:")) {
+    const id = heldId();
+    if (!BLK[id]) return;
+    const wall = WALLI.has(id);
+    if (wall !== k.includes(":")) {
+      toast(wall ? "🧱 This one goes on a wall." : "🪑 This one goes on the floor.", 1800);
+      return;
+    }
+    if (S.blocks[k] || RESV2.has(k) || k === "R:7" || k === "R:8") {
+      toast("That spot is taken.", 1500);
+      return;
+    }
+    if (!wall && k === Math.floor(R.cx) + "," + Math.floor(R.cy)) {
+      toast("Your astronaut is standing there.", 1500);
+      return;
+    }
+    S.blocks[k] = id;
+    if (R.tool === "move") R.holding = null;
+    else {
+      S.stash[id]--;
+      if (S.stash[id] <= 0) {
+        delete S.stash[id];
+        R.tool = "move";
+      }
+    }
+    beep(900, 0.07);
+    writeSave();
+    buildPalette();
+    return;
+  }
   if (R.tool === "erase") {
     if (S.blocks[k] && !RESV2.has(k)) {
       const b = BLK[S.blocks[k]];

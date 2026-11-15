@@ -97,6 +97,7 @@ function goExpedition() {
 }
 
 function toggleBuild() {
+  if (R.build) dropHeld();
   R.build = !R.build;
   $("bBuild").className = R.build ? "on" : "";
   $("pal").className = R.build ? "on" : "";
@@ -152,15 +153,34 @@ function buildPalette() {
       full: MODS[k].n + " (room)",
       cost: modCost(MODS[k]),
     })),
-    { k: "erase", e: "🧽", n: "Remove", full: "Remove a piece", cost: null },
+    ...Object.keys(S.stash || {})
+      .filter((id) => S.stash[id] > 0 && BLK[id])
+      .map((id) => ({
+        k: "stash:" + id,
+        e: BLK[id].e,
+        n: (SHORTN[id] || BLK[id].n) + " ×" + S.stash[id],
+        full: BLK[id].n + " (stored)",
+        cost: null,
+        tag: "stored",
+      })),
+    {
+      k: "move",
+      e: "✋",
+      n: "Move",
+      full: R.holding ? "Carrying: " + BLK[R.holding.id].n : "Move a piece",
+      cost: null,
+      tag: "pick up",
+    },
+    { k: "store", e: "📦", n: "Store", full: "Put a piece in storage", cost: null, tag: "keep it" },
+    { k: "erase", e: "🧽", n: "Remove", full: "Remove a piece", cost: null, tag: "refund" },
   ];
   const sel = all.find((a) => a.k === R.tool);
   $("pal").innerHTML =
-    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><small>${sel ? (sel.cost ? "Cost: " + costIcons(sel.cost) : "Gives it back") : "then tap the base"}</small><small>${sel && sel.k !== "erase" && !sel.k.startsWith("mod:") ? (WALLI.has(sel.k) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small></div>` +
+    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><small>${!sel ? "then tap the base" : sel.cost ? "Cost: " + costIcons(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small></div>` +
     all
       .map(
         (a) =>
-          `<button data-tool="${a.k}" class="${R.tool === a.k ? "on" : ""} ${a.cost && !afford(a.cost) ? "no" : ""}" title="${a.full}${a.cost ? ": " + costTxt(a.cost) : ""}" aria-label="${a.full}${a.cost ? ", costs " + costTxt(a.cost) : ""}"><i aria-hidden="true">${a.e}</i><span>${a.n}</span><small>${a.cost ? costIcons(a.cost) : "refund"}</small></button>`,
+          `<button data-tool="${a.k}" class="${R.tool === a.k ? "on" : ""} ${a.cost && !afford(a.cost) ? "no" : ""}" title="${a.full}${a.cost ? ": " + costTxt(a.cost) : ""}" aria-label="${a.full}${a.cost ? ", costs " + costTxt(a.cost) : ""}"><i aria-hidden="true">${a.e}</i><span>${a.n}</span><small>${a.cost ? costIcons(a.cost) : a.tag || ""}</small></button>`,
       )
       .join("") +
     `<button class="palx" data-x="1" aria-label="Close build mode" title="Close">✕</button>`;
@@ -172,6 +192,7 @@ $("pal").onclick = (e) => {
     toggleBuild();
     return;
   }
+  if (b.dataset.tool !== R.tool) dropHeld();
   R.tool = b.dataset.tool;
   buildPalette();
 };

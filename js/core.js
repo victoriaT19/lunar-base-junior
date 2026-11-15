@@ -81,6 +81,7 @@ function defSave() {
     pts: 0,
     best: {},
     garden: { stage: 0 },
+    stash: {},
     name: "Mira",
     suit: "#ff9f45",
     visor: "#1b2468",
