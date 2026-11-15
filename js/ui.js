@@ -28,6 +28,7 @@ function openMissions() {
     head("🎯 Mission board") +
       invHtml() +
       `<div class="row"><div><b>⚡ Power grid repair${f ? " (URGENT: " + f.t + ")" : ""}</b><small>${f ? "Rotate the power tiles to bring solar power back to every module." : "No fault right now. Practice for +10 units."}</small></div><button data-m="wires">Play</button></div>` +
+      `<div class="row"><div><b>🔌 Fix the wires</b><small>Connect each colored plug to the socket with the same color before time runs out.</small></div><button data-m="plugs">Play</button></div>` +
       `<div class="row"><div><b>🌱 Greenhouse</b><small>Plant, water and light a tomato plant step by step. Too much light burns it and wastes power!</small></div><button data-m="garden">Open</button></div>` +
       `<div class="row"><div><b>☢️ Storm shield drill${st.state ? " (LIVE STORM!)" : ""}</b><small>${st.state ? "Block the particles with your polymer shield to cut the real dose." : "Practice for +15 units. In a real storm it cuts your dose by up to 60%."}</small></div><button data-m="storm">${st.state ? "Defend!" : "Practice"}</button></div>` +
       `<div class="row"><div><b>🚙 Dark crater rover</b><small>Drive into a dark crater, scan for ice and minerals and bring them home.</small></div><button data-m="maze">Play</button></div>` +

@@ -62,6 +62,23 @@ function genGrid() {
   }
   m[GRID.src][0] |= 8;
   GRID.tg.forEach((ty) => (m[ty][c - 1] |= 2));
+  const pc = (v) => (v & 1) + ((v >> 1) & 1) + ((v >> 2) & 1) + ((v >> 3) & 1);
+  const anchor = (x, y) => (x === 0 && y === GRID.src) || (x === c - 1 && GRID.tg.includes(y));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let y = 0; y < r; y++)
+      for (let x = 0; x < c; x++) {
+        if (anchor(x, y) || pc(m[y][x]) !== 1) continue;
+        DIRS.forEach(([dx, dy, b, ob]) => {
+          if (m[y][x] & b) {
+            m[y][x] &= ~b;
+            if (m[y + dy] && m[y + dy][x + dx] !== undefined) m[y + dy][x + dx] &= ~ob;
+          }
+        });
+        changed = true;
+      }
+  }
   MG.tiles = m.map((row) =>
     row.map((v) => {
       let t = v;
@@ -105,14 +122,94 @@ function gridPow() {
   return { on, lit, n: lit.filter(Boolean).length };
 }
 function spinTile(x, y) {
+  if (!MG.tiles[y][x] || MG.winT > 0) return;
   MG.tiles[y][x] = rotm(MG.tiles[y][x]);
   MG.spin[x + "," + y] = 0.12;
   beep(520 + y * 40, 0.04);
   MG.pow = gridPow();
   if (MG.pow.n === 3) {
     beep(1100, 0.15);
-    finishMG(true);
+    MG.winT = 0.6;
   }
+}
+const PLUGC = ["#ff5d73", "#4cc9f0", "#ffd166", "#7bd88f", "#b388ff"];
+const PLUGN = ["RED", "BLUE", "YELLOW", "GREEN", "PURPLE"];
+function plugPick(i) {
+  if (MG.con[i] !== undefined) return;
+  MG.sel = i;
+  beep(700, 0.04);
+}
+function plugSock(i) {
+  if (MG.sel < 0 || MG.con.includes(i)) return;
+  if (MG.right[i] === MG.sel) {
+    MG.con[MG.sel] = i;
+    MG.spark.push({ i, t: 0 });
+    beep(1000, 0.07);
+  } else {
+    MG.t += 2;
+    MG.flash = 0.35;
+    beep(180, 0.12);
+  }
+  MG.sel = -1;
+}
+function drawPlugs(t) {
+  for (let i = 0; i < 40; i++) Q((i * 97) % 640, (i * 53) % 420, 2, 2, "#1d2660");
+  Q(70, 34, 100, 340, "#0b0f2a");
+  Q(72, 36, 96, 336, "#2a3470");
+  Q(470, 34, 100, 340, "#0b0f2a");
+  Q(472, 36, 96, 336, "#2a3470");
+  for (let i = 0; i < 5; i++) {
+    const y = 70 + i * 62;
+    const lc = PLUGC[i];
+    const rc = PLUGC[MG.right[i]];
+    const sel = MG.sel === i;
+    Q(96, y - 14, 48, 28, sel ? "#ffd166" : "#0b0f2a");
+    Q(99, y - 11, 42, 22, lc);
+    Q(99, y - 11, 42, 4, "#ffffff55");
+    Q(144, y - 4, 14, 8, "#8f97bd");
+    mc.fillStyle = "#0b0f2a";
+    mc.font = PF(7);
+    mc.textAlign = "center";
+    mc.fillText(String(i + 1), 120, y + 4);
+    Q(496, y - 14, 48, 28, "#0b0f2a");
+    Q(499, y - 11, 42, 22, rc);
+    Q(482, y - 6, 14, 12, "#0b0f2a");
+    Q(484, y - 4, 10, 8, "#3a3f5a");
+    mc.fillStyle = "#0b0f2a";
+    mc.fillText(String(i + 1), 520, y + 4);
+  }
+  MG.con.forEach((ri, li) => {
+    if (ri === undefined) return;
+    const y0 = 70 + li * 62,
+      y1 = 70 + ri * 62;
+    for (let k = 0; k <= 60; k++) {
+      const u = k / 60;
+      const x = 158 + (482 - 158) * u;
+      const y = y0 + (y1 - y0) * (u * u * (3 - 2 * u));
+      Q(x - 3, y - 4, 7, 8, "#0b0f2a");
+      Q(x - 2, y - 3, 5, 6, PLUGC[li]);
+    }
+  });
+  MG.spark.forEach((q) => {
+    const y = 70 + q.i * 62;
+    const r = 6 + q.t * 30;
+    for (let k = 0; k < 8; k++)
+      Q(490 + Math.cos(k * 0.8) * r, y + Math.sin(k * 0.8) * r, 3, 3, "#ffd166");
+  });
+  if (MG.sel >= 0) {
+    mc.fillStyle = PLUGC[MG.sel];
+    mc.font = PF(9);
+    mc.textAlign = "center";
+    mc.fillText("Now pick the " + PLUGN[MG.sel] + " socket ➜", 320, 395);
+  }
+  if (MG.flash > 0) {
+    mc.fillStyle = "rgba(255,60,60,.22)";
+    mc.fillRect(0, 0, 640, 420);
+  }
+  mc.fillStyle = "#fff";
+  mc.font = PF(9);
+  mc.textAlign = "left";
+  mc.fillText(`WIRES ${MG.con.filter((v) => v !== undefined).length}/5`, 470, 24);
 }
 function plantUse(i) {
   const p = MG.pl[i];
@@ -154,6 +251,10 @@ function startMG(kind) {
       "☢️ Storm shield",
       "Move the polyethylene shield with the mouse, finger or arrow keys. Block protons (yellow) and heavy ions (red). Plastic full of hydrogen stops radiation better than metal.",
     ],
+    plugs: [
+      "🔌 Fix the wires",
+      "Click a plug on the left, then the socket with the same color on the right. A wrong match costs 2 seconds. Keyboard: 1 to 5 picks a plug, then 1 to 5 picks a socket.",
+    ],
     maze: [
       "🚙 Dark crater rover",
       "Arrows or WASD to drive. The crater is dark: press Space to scan. Collect ice and minerals before time runs out.",
@@ -161,7 +262,15 @@ function startMG(kind) {
   }[kind];
   $("mgTitle").textContent = T[0];
   $("mgHelp").textContent = T[1];
-  if (kind === "wires") {
+  if (kind === "plugs") {
+    MG.max = 25 + (S.plan && mod("arm") ? 10 : 0);
+    MG.right = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5);
+    if (MG.right.every((v, i) => v === i)) MG.right.reverse();
+    MG.con = [];
+    MG.sel = -1;
+    MG.flash = 0;
+    MG.spark = [];
+  } else if (kind === "wires") {
     MG.max = 50 + (S.plan && mod("arm") ? 10 : 0);
     genGrid();
     let g = 0;
@@ -269,7 +378,17 @@ function applyMG() {
   if (r.ok && !m.kai)
     addPts(m.kind === "storm" ? Math.round(30 + 40 * (r.data || 0)) : 50, "task done");
   if (m.kind === "wires" && r.ok) S.hull = Math.min(100, (S.hull == null ? 100 : S.hull) + 15);
-  if (m.kind === "wires") {
+  if (m.kind === "plugs") {
+    if (r.ok) {
+      S.units += 10;
+      S.hull = Math.min(100, (S.hull == null ? 100 : S.hull) + 5);
+      if (R.fault && R.fault.k !== "power") {
+        R.fault = null;
+        S.flags.repaired = (S.flags.repaired || 0) + 1;
+        msg = "🔌 Wires fixed and the fault is gone! +10 units";
+      } else msg = "🔌 All wires connected! +10 units";
+    } else msg = "The wires got tangled. Try again!";
+  } else if (m.kind === "wires") {
     if (r.ok) {
       if (R.fault) {
         R.fault = null;
@@ -351,6 +470,14 @@ mg.addEventListener("pointerdown", (e) => {
   if (!MG || MG.res) return;
   ensureAudio();
   const p = mgPos(e);
+  if (MG.kind === "plugs") {
+    for (let i = 0; i < 5; i++) {
+      const y = 70 + i * 62;
+      if (Math.abs(p.x - 120) < 40 && Math.abs(p.y - y) < 24) plugPick(i);
+      if (Math.abs(p.x - 520) < 40 && Math.abs(p.y - y) < 24) plugSock(i);
+    }
+    return;
+  }
   if (MG.kind === "wires") {
     const x = Math.floor((p.x - GRID.ox) / GRID.s),
       y = Math.floor((p.y - GRID.oy) / GRID.s);
@@ -396,6 +523,11 @@ window.addEventListener("keydown", (e) => {
   if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "enter"].includes(k))
     e.preventDefault();
   if (MG.res) return;
+  if (MG.kind === "plugs" && /^[1-5]$/.test(k)) {
+    if (MG.sel < 0) plugPick(+k - 1);
+    else plugSock(+k - 1);
+    return;
+  }
   if (MG.kind === "wires") {
     const d = MDIR[k];
     if (d) {
@@ -434,12 +566,25 @@ function mgUpdate(dt) {
   }
   MG.t += dt;
   const left = MG.max - MG.t;
+  if (MG.kind === "plugs") {
+    MG.flash = Math.max(0, MG.flash - dt);
+    MG.spark.forEach((q) => (q.t += dt));
+    MG.spark = MG.spark.filter((q) => q.t < 0.5);
+    if (MG.con.filter((v) => v !== undefined).length === 5) {
+      MG.winT = (MG.winT || 0.5) - dt;
+      if (MG.winT <= 0) finishMG(true);
+    } else if (left <= 0) finishMG(false);
+    return;
+  }
   if (MG.kind === "wires") {
     Object.keys(MG.spin).forEach((k) => {
       MG.spin[k] -= dt;
       if (MG.spin[k] <= 0) delete MG.spin[k];
     });
-    if (left <= 0) finishMG(false);
+    if (MG.winT > 0) {
+      MG.winT -= dt;
+      if (MG.winT <= 0) finishMG(true);
+    } else if (left <= 0) finishMG(false);
   } else if (MG.kind === "plant") {
     MG.sp -= dt;
     if (MG.sp <= 0 && left > 2) {
@@ -681,6 +826,7 @@ function mgDraw(t) {
   if (MG.kind === "storm" && MG.shake > 0)
     mc.translate(Math.round(rnd(-3, 3) * MG.shake), Math.round(rnd(-3, 3) * MG.shake));
   Q(0, 0, 640, 420, "#0a0e2a");
+  if (MG.kind === "plugs") drawPlugs(t);
   if (MG.kind === "wires") {
     for (let i = 0; i < 40; i++) Q((i * 97) % 640, (i * 53) % 420, 2, 2, "#1d2660");
     const { c, r, s, ox, oy } = GRID;
@@ -694,7 +840,8 @@ function mgDraw(t) {
         Q(px + 2, py + 2, s - 4, 3, "#222b66");
         Q(px + 5, py + 5, 3, 3, "#2f3a80");
         Q(px + s - 8, py + s - 8, 3, 3, "#2f3a80");
-        drawPipe(px, py, s, MG.tiles[y][x], MG.pow.on[y][x], MG.spin[x + "," + y] || 0);
+        if (MG.tiles[y][x])
+          drawPipe(px, py, s, MG.tiles[y][x], MG.pow.on[y][x], MG.spin[x + "," + y] || 0);
       }
     const [cx2, cy2] = MG.cur;
     mc.strokeStyle = "#ffd166";

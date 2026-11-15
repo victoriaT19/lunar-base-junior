@@ -27,7 +27,7 @@ function updateHud(dt) {
     `<b>${S.name}</b> · ⏳ ${Math.max(0, missionLeft() / DAYLEN).toFixed(1)} days left · ◈ ${S.units} · 🍲 ${S.rations}<br>${c ? `<small>🎯 STEP ${S.ch + 1} OF ${CHAPTERS.length}: ${c.t.toUpperCase()}</small><br>${c.goal}${g0}` : mainDone() ? "<small>🏁 Main mission complete!</small>" : "<small>Plan your mission</small>"}`;
   let b = "";
   if (R.fault)
-    b += `<div class="wc">🔧 FAULT: ${R.fault.t} <button data-b="wires">Repair</button></div>`;
+    b += `<div class="wc">🔧 FAULT: ${R.fault.t} <button data-b="${R.fault.k === "power" ? "wires" : "plugs"}">Repair</button></div>`;
   const st = R.storm;
   if (st.state === 1)
     b += `<div class="wc">☢️ STORM IN ${Math.ceil(st.t)} s <button data-b="storm">Shield drill</button></div>`;
