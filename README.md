@@ -67,6 +67,7 @@ Values are simplified for education.
 - `js/room.js`: the isometric base room: floor, walls, furniture, building and walking. `js/hub.js`: astronaut actions, faults, storms and the story. `js/ui.js`: menus and the character creator.
 - `js/plan.js`: ship planning, mission clock and NASA space weather. `js/minigames.js`: the missions.
 - `js/mission.js`: oxygen, power, hull, endings, points, stars and the greenhouse. `js/main.js`: game loop, HUD and start up.
+- `js/music.js`: original soundtrack (two space tracks) generated live with the Web Audio API, no audio files.
 - `js/expedition.js`: surface exploration. `art/art.js`: the pixel art characters and icons.
 - Progress is saved in the browser (localStorage).
 
