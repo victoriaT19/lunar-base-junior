@@ -263,9 +263,39 @@ function startStorm() {
   beep(500, 0.3);
 }
 
+function tickStorm(dt) {
+  const st = R.storm;
+  if (st.state === 1) {
+    st.t -= dt;
+    if (st.t <= 0) {
+      st.state = 2;
+      st.t = 15;
+      toast("☢️ STORM FRONT ARRIVED!", 3000);
+    }
+  } else if (st.state === 2) {
+    st.t -= dt;
+    if (st.t <= 0) {
+      const d =
+        st.total *
+        Math.exp(-shieldVal() / 6) *
+        (1 - 0.6 * st.prot) *
+        (mod("med") ? 0.9 : 1) *
+        (1.25 - (S.plan ? S.plan.sh : 40) / 200);
+      S.dose += d;
+      const hd = 14 * Math.exp(-shieldVal() / 6) * (1 - 0.6 * st.prot);
+      S.hull = Math.max(0, (S.hull == null ? 100 : S.hull) - hd);
+      S.flags.storms = (S.flags.storms || 0) + 1;
+      R.storm = { state: 0, t: 0, total: 0, prot: 0 };
+      toast(`The storm passed. Your walls and drill cut it to ${d.toFixed(0)} mSv.`, 6000);
+    }
+  }
+}
 function update(dt) {
   R.t += dt;
-  if (R.paused) return;
+  if (R.paused) {
+    if (typeof MG !== "undefined" && MG && R.storm.state) tickStorm(dt);
+    return;
+  }
   const n = S.needs;
   const fm = R.fault ? 2 : 1;
   const sleeping = R.mode === "sleep";
@@ -339,31 +369,7 @@ function update(dt) {
     if (S.ch === 1 && !R.fault && !(S.flags.repaired >= 1)) spawnFault();
     if (S.ch === 4 && R.storm.state === 0 && !(S.flags.storms >= 1)) startStorm();
   }
-  const st = R.storm;
-  if (st.state === 1) {
-    st.t -= dt;
-    if (st.t <= 0) {
-      st.state = 2;
-      st.t = 15;
-      toast("☢️ STORM FRONT ARRIVED!", 3000);
-    }
-  } else if (st.state === 2) {
-    st.t -= dt;
-    if (st.t <= 0) {
-      const d =
-        st.total *
-        Math.exp(-shieldVal() / 6) *
-        (1 - 0.6 * st.prot) *
-        (mod("med") ? 0.9 : 1) *
-        (1.25 - (S.plan ? S.plan.sh : 40) / 200);
-      S.dose += d;
-      const hd = 14 * Math.exp(-shieldVal() / 6) * (1 - 0.6 * st.prot);
-      S.hull = Math.max(0, (S.hull == null ? 100 : S.hull) - hd);
-      S.flags.storms = (S.flags.storms || 0) + 1;
-      R.storm = { state: 0, t: 0, total: 0, prot: 0 };
-      toast(`The storm passed. Your walls and drill cut it to ${d.toFixed(0)} mSv.`, 6000);
-    }
-  }
+  tickStorm(dt);
   if (R.leave > 0) {
     R.door = Math.min(1, R.door + dt * 2);
     R.roverX += dt * 40;
