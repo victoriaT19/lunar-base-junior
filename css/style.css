@@ -1206,6 +1206,17 @@ body.big #bar .bmain button {
 .mgoal {
   color: #ffd166;
 }
+#pal .palh .cw {
+  color: #7bd88f;
+  margin-right: 6px;
+}
+#pal .palh .cw.lack {
+  color: #ff8a9a;
+}
+#pal .palh .cw i {
+  font-style: normal;
+  color: #9fb0ff;
+}
 #pal .palh .bal {
   color: #7bd88f;
 }
