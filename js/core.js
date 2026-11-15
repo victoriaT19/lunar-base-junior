@@ -8,8 +8,8 @@ const W = 960,
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
-const cv = $("cv"),
-  ctx = cv.getContext("2d");
+const cv = $("cv");
+let ctx = cv.getContext("2d");
 ctx.scale(2, 2);
 ctx.imageSmoothingEnabled = false;
 const GCR = 1.37,
