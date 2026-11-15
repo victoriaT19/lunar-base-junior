@@ -17,7 +17,7 @@ function starTxt(n) {
 }
 function addPts(n, why) {
   S.pts = (S.pts || 0) + n;
-  toast(`⭐ +${n} points: ${why}`, 2600);
+  toast(`⭐ +${n}`, 1800);
 }
 function mainDone() {
   return S.ch >= CHAPTERS.length;
@@ -26,7 +26,7 @@ function spend(o2, pwr, why) {
   S.o2 = clamp((S.o2 == null ? 100 : S.o2) - o2, 0, 100);
   S.pwr = clamp((S.pwr == null ? 80 : S.pwr) - pwr, 0, 100);
   S.needs.energy = Math.max(0, S.needs.energy - 1);
-  if (why) toast(`🫧 −${o2} oxygen · ⚡ −${pwr} power (${why})`, 1800);
+  if (why) toast(`🫧 −${o2}  ⚡ −${pwr}`, 1400);
 }
 function missionBoard() {
   const ts = totalStars();

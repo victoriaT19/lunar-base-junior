@@ -15,8 +15,16 @@ function updateHud(dt) {
     bar("🛠️ Hull", S.hull, "#ff9f45", S.hull < 30) +
     `<div style="font-size:.9em">😴 Rest ${Math.round(n.energy)} · 💛 Mood ${Math.round(n.mood)} · ☢️ ${S.dose.toFixed(1)}/${DLIM} mSv · ⭐ ${S.pts || 0}</div>`;
   const c = CHAPTERS[S.ch];
+  const tick = (l, ok) => `<span class="gl ${ok ? "ok" : ""}">${ok ? "✅" : "⬜"} ${l}</span>`;
+  const g0 =
+    S.ch === 0
+      ? `<div class="gls">${tick("🍽️ Table", cnt("table") >= 1)}${tick(
+          "🖼️ Decor",
+          ["lamp", "poster", "flag", "plant", "window", "bed"].some((d) => cnt(d) >= 1),
+        )}${tick("🍲 Eat", S.flags.ate)}${tick("😴 Sleep", S.flags.slept)}${tick("🤖 Hi KAI", S.flags.petted)}</div>`
+      : "";
   $("info").innerHTML =
-    `<small>PHASE 2 · LUNAR BASE · ${(S.plan ? LEVELS[S.plan.level] || lvNow() : lvNow()).n.toUpperCase()} LEVEL</small><br><b>${S.name}</b> · Day ${Math.floor(S.t / DAYLEN) + 1} · ⏳ ${Math.max(0, missionLeft() / DAYLEN).toFixed(1)}d left · ◈ ${S.units} · 🍲 ${S.rations}<br>${c ? `<small>CHAPTER ${S.ch + 1}: ${c.t}</small><br>${c.goal}` : S.ch >= CHAPTERS.length ? "<small>Outpost established. Keep building!</small>" : "<small>Plan your mission</small>"}<br><small>🏠 ${Object.keys(S.blocks).length} blocks: −${sizePenalty().toFixed(1)} days of mission time</small>`;
+    `<b>${S.name}</b> · ⏳ ${Math.max(0, missionLeft() / DAYLEN).toFixed(1)} days left · ◈ ${S.units} · 🍲 ${S.rations}<br>${c ? `<small>🎯 STEP ${S.ch + 1} OF ${CHAPTERS.length}: ${c.t.toUpperCase()}</small><br>${c.goal}${g0}` : mainDone() ? "<small>🏁 Main mission complete!</small>" : "<small>Plan your mission</small>"}`;
   let b = "";
   if (R.fault)
     b += `<div class="wc">🔧 FAULT: ${R.fault.t} <button data-b="wires">Repair</button></div>`;

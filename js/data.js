@@ -210,14 +210,14 @@ const CHAPTERS = [
     t: "Arrival",
     x: 'Hopper Base hums quietly around you, but it is still a mess of boxes. "Welcome home," says KAI, your helper robot. "First, let us make this place comfortable: open Build and place a dining table and one decoration. Then eat, sleep and say hi to me. After that, Mission Control will send your mission."',
     d: "Astronauts on the ISS follow strict schedules for eating, sleeping and exercise. Looking after the person is as important as looking after the machines.",
-    goal: "Build a dining table and one decoration, eat a meal, sleep in the bunk and say hi to KAI.",
+    goal: "Make the base cozy, eat, sleep and say hi to KAI.",
     ok: () => S.flags.ate && S.flags.slept && S.flags.petted && homeReady(),
   },
   {
     t: "First Alarm",
     x: 'A red light starts blinking over the console. Something in the base just failed. Mission Control stays calm: "Open the repair job and reconnect the wires. You can do it."',
     d: "Space hardware fails. Energetic particles can flip bits and burn out electronics, which is why spacecraft use shielding and radiation-hardened parts.",
-    goal: "Repair the fault (Missions → Repair wires).",
+    goal: "Fix the broken power grid (🎯 Missions).",
     ok: () => (S.flags.repaired || 0) >= 1,
     start() {
       spawnFault();
@@ -227,21 +227,21 @@ const CHAPTERS = [
     t: "Over the Ridge",
     x: "Out there is everything the base needs: ore, ice and carbon. Some of it hides in craters that have not seen the Sun in billions of years. Go out through the airlock, or drive the rover into a dark crater.",
     d: "In 2009 NASA's LCROSS probe hit a permanently shadowed crater and found water ice. NASA's LRO has mapped the south pole since the same year.",
-    goal: "Bring 6 or more items home (expedition or dust maze).",
+    goal: "Bring 6 things home from outside.",
     ok: () => (S.lootTotal || 0) >= 6,
   },
   {
     t: "Walls of Hydrogen",
     x: 'Mission Control sounds serious. "Space weather is picking up. Radiation is the one thing you cannot see. Build walls that stop it, and craft the polymer to do it."',
     d: "Hydrogen-rich polymers such as polyethylene are among the best radiation shields known, so NASA studies them for deep space habitats.",
-    goal: "Craft a polymer plate and build a Polymer wall.",
+    goal: "Make a polymer plate (🔧 Craft), then build a 🛡️ Shield wall.",
     ok: () => cnt("polymer") >= 1,
   },
   {
     t: "The Storm",
     x: "The alarm cuts through the base. The Sun has thrown a huge cloud of charged particles toward the Moon. In forty seconds it arrives. There is no air and no magnetic field to stop it. Use the storm drill to hold the line.",
     d: "Solar particle storms like this are tracked by NASA's DONKI database. In August 1972, between Apollo 16 and 17, one of the biggest ever struck. Luckily no astronauts were on the Moon.",
-    goal: "Survive the solar storm (play the Storm shield drill).",
+    goal: "Survive the solar storm: play ☢️ Storm shield!",
     ok: () => (S.flags.storms || 0) >= 1,
     start() {
       startStorm();
@@ -251,7 +251,7 @@ const CHAPTERS = [
     t: "Outpost",
     x: "The storm is over and the base is still standing. Now it is time to make it a home: solar power, a window with a view of Earth and an antenna to call your family.",
     d: "Artemis plans a lasting presence near the lunar south pole, where ice and long periods of sunlight make an outpost possible.",
-    goal: "Build 3 Solar panels, 1 Antenna and 1 Window.",
+    goal: "Build 3 ☀️ Solar, 1 📡 Antenna and 1 🪟 Window.",
     ok: () => cnt("solar") >= 3 && cnt("antenna") >= 1 && cnt("window") >= 1,
   },
 ];

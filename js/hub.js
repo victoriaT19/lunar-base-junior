@@ -587,6 +587,7 @@ cv.addEventListener("pointerdown", (e) => {
         delete S.blocks[key];
         beep(500, 0.06);
         writeSave();
+        buildPalette();
       }
       return;
     }
@@ -599,7 +600,7 @@ cv.addEventListener("pointerdown", (e) => {
       }
       const cost = modCost(m);
       if (!afford(cost)) {
-        toast("You need " + costTxt(cost) + ".", 2200);
+        toast("Not enough: " + costIcons(cost), 2200);
         return;
       }
       payCost(cost, 1);
@@ -607,7 +608,9 @@ cv.addEventListener("pointerdown", (e) => {
         S.blocks[c + x[0] + "," + (r + x[1])] = x[2];
       });
       beep(900, 0.07);
+      S.pwr = Math.max(0, (S.pwr == null ? 80 : S.pwr) - 1);
       writeSave();
+      buildPalette();
       return;
     }
     const chk = canPlace(c, r, R.tool);
@@ -617,13 +620,15 @@ cv.addEventListener("pointerdown", (e) => {
     }
     const b = BLK[R.tool];
     if (!afford(b.cost)) {
-      toast("You need " + costTxt(b.cost) + ".", 2200);
+      toast("Not enough: " + costIcons(b.cost), 2200);
       return;
     }
     payCost(b.cost, 1);
     S.blocks[key] = R.tool;
     beep(900, 0.07);
+    S.pwr = Math.max(0, (S.pwr == null ? 80 : S.pwr) - 1);
     writeSave();
+    buildPalette();
     return;
   }
   if (Math.abs(p.x - R.x) < 40 && p.y > FLOORY - 170 && p.y < FLOORY + 10) {
@@ -738,28 +743,73 @@ function toggleBuild() {
   R.build = !R.build;
   $("bBuild").className = R.build ? "on" : "";
   $("pal").className = R.build ? "on" : "";
+  document.body.classList.toggle("building", R.build);
   if (R.build) buildPalette();
 }
+const SHORTN = {
+  brick: "Brick",
+  polymer: "Shield",
+  window: "Window",
+  solar: "Solar",
+  plant: "Plant",
+  bed: "Bunk",
+  lamp: "Lamp",
+  poster: "Poster",
+  antenna: "Antenna",
+  flag: "Flag",
+  table: "Table",
+};
+const COSTI = {
+  regolith: "🪨",
+  ilmenite: "🔶",
+  carbon: "⚫",
+  ice: "🧊",
+  metal: "🔩",
+  polymer: "🟪",
+  solar: "🔋",
+  units: "◈",
+};
+function costIcons(cost) {
+  return Object.keys(cost)
+    .map((k) => `${COSTI[k] || ""}${cost[k]}`)
+    .join(" ");
+}
 function buildPalette() {
+  const all = [
+    ...Object.keys(BLK).map((k) => ({
+      k,
+      e: BLK[k].e,
+      n: SHORTN[k] || BLK[k].n,
+      full: BLK[k].n,
+      cost: BLK[k].cost,
+    })),
+    ...Object.keys(MODS).map((k) => ({
+      k,
+      e: MODS[k].e,
+      n: MODS[k].n,
+      full: MODS[k].n + " (room)",
+      cost: modCost(MODS[k]),
+    })),
+    { k: "erase", e: "🧽", n: "Remove", full: "Remove a piece", cost: null },
+  ];
+  const sel = all.find((a) => a.k === R.tool);
   $("pal").innerHTML =
-    `<div class="palh">🧱 BUILD MODE: pick a piece, then click an empty spot in the base. Modules are ready-made rooms. Every block makes the base bigger, and a bigger base uses more mission time.</div>` +
-    Object.keys(BLK)
+    `<div class="palh"><b>🧱 BUILD</b><span>${sel ? sel.e + " " + sel.full : "Pick a piece ➜"}</span><small>${sel ? (sel.cost ? costIcons(sel.cost) : "gives it back") : "then tap the base"}</small><small>🏠 Bigger base: −${sizePenalty().toFixed(1)} days</small></div>` +
+    all
       .map(
-        (k) =>
-          `<button data-tool="${k}" class="${R.tool === k ? "on" : ""}">${BLK[k].e} ${BLK[k].n}<small>${costTxt(BLK[k].cost)}</small></button>`,
+        (a) =>
+          `<button data-tool="${a.k}" class="${R.tool === a.k ? "on" : ""} ${a.cost && !afford(a.cost) ? "no" : ""}" title="${a.full}${a.cost ? ": " + costTxt(a.cost) : ""}" aria-label="${a.full}${a.cost ? ", costs " + costTxt(a.cost) : ""}"><i aria-hidden="true">${a.e}</i><span>${a.n}</span><small>${a.cost ? costIcons(a.cost) : ""}</small></button>`,
       )
       .join("") +
-    Object.keys(MODS)
-      .map(
-        (k) =>
-          `<button data-tool="${k}" class="${R.tool === k ? "on" : ""}">${MODS[k].e} ${MODS[k].n} (room)<small>${costTxt(modCost(MODS[k]))}</small></button>`,
-      )
-      .join("") +
-    `<button data-tool="erase" class="${R.tool === "erase" ? "on" : ""}">🧽 Remove<small>refunds the cost</small></button>`;
+    `<button class="palx" data-x="1" aria-label="Close build mode" title="Close">✕</button>`;
 }
 $("pal").onclick = (e) => {
   const b = e.target.closest("button");
   if (!b) return;
+  if (b.dataset.x) {
+    toggleBuild();
+    return;
+  }
   R.tool = b.dataset.tool;
   buildPalette();
 };
