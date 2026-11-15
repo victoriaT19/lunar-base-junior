@@ -9,7 +9,7 @@ Create your own astronaut, pack the ship on Earth, fly to the Moon, build a base
 ## The three phases
 
 1. **Pack the ship (Earth).** Choose the modules and supplies for your mission. Live graphs show mission time, life support, protective shield and resilience. More items make the ship heavier, so the trip takes longer and you have less time on the Moon.
-2. **Build the base (Moon).** Build Hopper Base block by block and with ready-made modules: bunk, garden, shielding walls and more. A bigger base costs energy and mission time. Take care of your astronaut (food, sleep and mood) and play repair, plant care, storm and maze missions.
+2. **Build the base (Moon).** Build Hopper Base block by block and with ready-made modules: bunk, garden, shielding walls and more. A bigger base costs energy and mission time. Take care of your astronaut (food, sleep and mood) and play the power grid, greenhouse, storm shield and dark crater rover missions.
 3. **Explore the surface.** Leave through the airlock to collect samples. Life support, shield and energy drop every second, so you must get back to the base in time.
 
 ## Levels based on real missions
