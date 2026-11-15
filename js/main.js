@@ -328,7 +328,7 @@ function techBox() {
   return `<div class="real">🛰️ <b style="color:var(--txt)">Real NASA technology in development (TechPort):</b><br>${LIVE.tech
     .map(
       (t) =>
-        `• ${String(t.title).replace(/</g, "&lt;")}${t.org ? " · " + t.org : ""}${t.trl ? " · TRL " + t.trl : ""}`,
+        `• <span translate="no">${String(t.title).replace(/</g, "&lt;")}${t.org ? " · " + t.org : ""}</span>${t.trl ? " · TRL " + t.trl : ""}`,
     )
     .join(
       "<br>",

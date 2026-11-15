@@ -1241,11 +1241,11 @@ function renderMenu(tab) {
   if (tab === "craft") {
     h += RC.map(
       (r, i) =>
-        `<div class="row"><div><b>${r.n}</b><small>Needs ${Object.keys(r.cost)
-          .map((k) => r.cost[k] + " " + ITEMS[k].n)
+        `<div class="row"><div><b>${r.n}</b><small>${tr("Needs")} ${Object.keys(r.cost)
+          .map((k) => r.cost[k] + " " + tr(ITEMS[k].n))
           .join(
             ", ",
-          )} → ${r.fx}</small></div><button data-craft="${i}" ${canPay(r.cost) ? "" : "disabled"}>Craft</button></div>`,
+          )} → ${tr(r.fx)}</small></div><button data-craft="${i}" ${canPay(r.cost) ? "" : "disabled"}>Make</button></div>`,
     ).join("");
   } else if (tab === "suit") {
     h += `<div class="row"><div><b>Install polymer plate</b><small>Uses 1 Polymer plate. Permanently +20 hazard protection and slower drain in storms. Installed layers: ${G.polyL}</small></div><button data-inst="1" ${G.inv.polymer >= 1 ? "" : "disabled"}>Install</button></div>`;

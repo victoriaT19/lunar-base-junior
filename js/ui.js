@@ -47,7 +47,7 @@ function openMissions() {
       `<div class="row"><div><b>🌱 Greenhouse</b><small>Plant, water and light a tomato plant step by step. Too much light burns it and wastes power!</small>${tags("+3 🍲 · +10 🫧 · ⭐40", [1, 1], "")}</div><button data-m="garden">Open</button></div>` +
       `<div class="row"><div><b>☢️ Storm shield drill${st.state ? " (LIVE STORM!)" : ""}</b><small>${st.state ? "Block the particles with your polymer shield to cut the real dose." : "Practice for +15 units. In a real storm it cuts your dose by up to 60%."}</small>${tags(st.state ? "−60% storm dose · ⭐30-70" : "+15 ◈ · ⭐30-70", [2, 3], "28 s")}</div><button data-m="storm">${st.state ? "Defend!" : "Practice"}</button></div>` +
       `<div class="row"><div><b>🚙 Dark crater rover</b><small>Drive into a dark crater, scan for ice and minerals and bring them home.</small>${tags("ice, ilmenite, regolith · ⭐50", [2, 3], "45 s")}</div><button data-m="maze">Play</button></div>` +
-      `<div class="row"><div><b>🚀 Surface expedition</b><small>${mod("airlock") ? "Explore the open lunar surface, mine, scan discoveries and bring loot home." : "Your ship has no airlock, so this is locked."}</small>${tags("materials, discoveries · ⭐30 each", [4, 4], "until oxygen runs low")}</div><button data-m="exp" ${mod("airlock") ? "" : "disabled"}>Go</button></div>`,
+      `<div class="row"><div><b>🚀 Surface expedition</b><small>${mod("airlock") ? "Explore the open lunar surface, mine, scan discoveries and bring loot home." : "Your ship has no airlock, so this is locked."}</small>${tags("materials, discoveries · ⭐30 each", [4, 4], "until oxygen runs low")}</div><button data-m="exp" ${mod("airlock") ? "" : "disabled"}>${tr("Go")}</button></div>`,
   );
 }
 function openCraft() {

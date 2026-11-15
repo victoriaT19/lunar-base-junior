@@ -34,7 +34,7 @@ function missionBoard() {
     const open = ts >= m.need;
     const best = (S.best || {})[m.id] || 0;
     const cur = (S.mission || "hopper") === m.id;
-    return `<button type="button" class="mcard ${open ? "" : "locked"} ${cur ? "cur" : ""}" data-mis="${m.id}" ${open ? "" : "disabled"} aria-pressed="${cur}" aria-label="${m.n}${open ? "" : ", locked"}"><span class="mico">${open ? m.e : "🔒"}</span><b>${m.n}</b><small>${!open ? `Needs ${m.need} ★ (you have ${ts})` : cur ? "✅ Selected" + (best ? " · Best: " + starTxt(best) : "") : best ? "Best: " + starTxt(best) : "▶ Tap to play"}</small></button>`;
+    return `<button type="button" class="mcard ${open ? "" : "locked"} ${cur ? "cur" : ""}" data-mis="${m.id}" ${open ? "" : "disabled"} aria-pressed="${cur}" aria-label="${m.n}${open ? "" : ", locked"}"><span class="mico">${open ? m.e : "🔒"}</span><b>${m.n}</b><small>${!open ? `${tr("Needs")} ${m.need} ★ (${tr("you have")} ${ts})` : cur ? "✅ Selected" + (best ? " · Best: " + starTxt(best) : "") : best ? "Best: " + starTxt(best) : "▶ Tap to play"}</small></button>`;
   }).join("")}</div>`;
 }
 
