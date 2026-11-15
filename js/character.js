@@ -64,7 +64,7 @@ function charCanvas(L) {
   const d = px.data;
   const ramp = (T, lv) =>
     T.map((v) =>
-      Math.round(lv === 0 ? v + (255 - v) * 0.32 : lv === 1 ? v : lv === 2 ? v * 0.78 : v * 0.6),
+      Math.round(lv === 0 ? v + (255 - v) * 0.36 : lv === 1 ? v : lv === 2 ? v * 0.82 : v * 0.68),
     );
   for (let p = 0; p < d.length; p += 4) {
     const li = Math.round(lb[p] / 60);
@@ -156,7 +156,8 @@ function drawMira(c, x, y, sc, o) {
   if (!cv2) return;
   const meta = ART[charOf(S)];
   const k = o.k || 2;
-  const a = Math.abs(c.getTransform().a) || 1;
+  const tr = c.getTransform();
+  const a = Math.hypot(tr.a, tr.b) || 1;
   const s2 = Math.max(1, Math.round(((76 * k) / meta.h) * a)) / a;
   const t = o.still ? 0 : R.t;
   const walking = o.mode === "walk",

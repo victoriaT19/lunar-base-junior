@@ -499,8 +499,9 @@ $("menuBox").onclick = (e) => {
   if (d.m === "exp") {
     R.paused = false;
     $("ovMenu").classList.remove("on");
-    R.act = { t: "exp", x: DOORX };
-    R.tx = DOORX;
+    R.act = { t: "exp", p: STAND.exp };
+    R.tcx = STAND.exp[0];
+    R.tcy = STAND.exp[1];
     return;
   }
   if (d.m === "garden") {

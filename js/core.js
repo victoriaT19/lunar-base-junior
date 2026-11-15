@@ -148,7 +148,7 @@ function mod(id) {
   return S.plan ? !!S.plan.sel[id] : true;
 }
 
-const SKINS = ["#ffe0c2", "#f6c9a0", "#e0a678", "#c68642", "#8d5524", "#6b3e1f", "#3f2412"];
+const SKINS = ["#ffe0c2", "#f6c9a0", "#e0a678", "#c68642", "#a0663a", "#80502e", "#5e3a22"];
 const HAIRC = [
   "#17141a",
   "#3b2314",

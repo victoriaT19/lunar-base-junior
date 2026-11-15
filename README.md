@@ -9,7 +9,7 @@ Create your own astronaut, pack the ship on Earth, fly to the Moon, build a base
 ## The three phases
 
 1. **Pack the ship (Earth).** Choose the modules and supplies for your mission. Live graphs show mission time, life support, protective shield and resilience. More items make the ship heavier, so the trip takes longer and you have less time on the Moon. The airlock is always included.
-2. **Build the base (Moon).** First make the base comfortable (a dining table and one decoration). Then keep four resources alive: **oxygen, power, food and hull**. Every block makes the base use more power and mission time. Play the power grid, storm shield and dark crater missions, and grow tomatoes in the greenhouse step by step: plant, water, then turn on the red and blue LED light, but not for too long or the plant burns and the base loses power.
+2. **Build the base (Moon).** The base is a room you can walk around and decorate: furniture goes on the floor, windows, shields and solar panels go on the walls. First make the base comfortable (a dining table and one decoration). Then keep four resources alive: **oxygen, power, food and hull**. Every block makes the base use more power and mission time. Play the power grid, storm shield and dark crater missions, and grow tomatoes in the greenhouse step by step: plant, water, then turn on the red and blue LED light, but not for too long or the plant burns and the base loses power.
 3. **Explore the surface.** Leave through the airlock to collect samples. Oxygen, shield and energy drop every second, so you must get back to the base in time.
 
 ## KAI, the helper robot
@@ -62,7 +62,7 @@ Values are simplified for education.
 - `css/`: styles for each page.
 - `js/core.js`: levels, save data and settings. `js/data.js`: items, blocks, ship modules and story. `js/state.js`: shared game state, audio and helpers.
 - `js/character.js`: the astronaut sprite, colors, accessories and animation.
-- `js/hub.js`: the base, building and astronaut actions. `js/ui.js`: menus and the character creator.
+- `js/room.js`: the isometric base room: floor, walls, furniture, building and walking. `js/hub.js`: astronaut actions, faults, storms and the story. `js/ui.js`: menus and the character creator.
 - `js/plan.js`: ship planning, mission clock and NASA space weather. `js/minigames.js`: the missions.
 - `js/mission.js`: oxygen, power, hull, endings, points, stars and the greenhouse. `js/main.js`: game loop, HUD and start up.
 - `js/expedition.js`: surface exploration. `art/art.js`: the pixel art characters and icons.

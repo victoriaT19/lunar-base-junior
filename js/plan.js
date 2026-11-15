@@ -107,13 +107,6 @@ function modCost(m) {
   });
   return t;
 }
-function canPlaceMod(c, r, m) {
-  for (const x of m.cells) {
-    const q = canPlace(c + x[0], r + x[1], x[2]);
-    if (!q.ok) return q;
-  }
-  return { ok: true };
-}
 const APIKEY = "QqdH8KW98DC7pqKqLCGc7zd68wKcH6CPgQnGPhbk";
 async function loadWx() {
   try {
