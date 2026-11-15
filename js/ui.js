@@ -17,6 +17,14 @@ function invHtml() {
     )
     .join("")}<span>🍲 ${S.rations}</span><span>◈ ${S.units}</span></div>`;
 }
+function helpBox(title, lines) {
+  return `<details class="help"><summary>❓ ${title}</summary><ul>${lines.map((l) => `<li>${l.replace(/<[^>]+>/g, "")}</li>`).join("")}</ul></details>`;
+}
+const HELP_UNITS =
+  "◈ <b>Units</b> are the base money. You earn them by finishing tasks, chapters and expeditions, and you spend them on supplies (Workshop) and some decorations (Build).";
+function tags(rw, cost, time) {
+  return `<span class="tags"><span class="tg good">🏅 ${rw}</span><span class="tg bad">🫧 −${cost[0]} ⚡ −${cost[1]}</span>${time ? `<span class="tg">⏱️ ${time}</span>` : ""}</span>`;
+}
 function head(title) {
   return `<div style="display:flex;justify-content:space-between;align-items:center"><h2>${title}</h2><button class="alt" data-m="close">✕ Close</button></div>`;
 }
@@ -26,18 +34,31 @@ function openMissions() {
   const st = R.storm;
   openModal(
     head("🎯 Mission board") +
+      helpBox("How this screen works", [
+        "These are <b>optional tasks</b>. They help you earn units and points, fix problems and keep the base alive. The <b>main goal</b> is always shown at the top right of the screen.",
+        "🏅 green tag: what you <b>win</b>. 🫧⚡ red tag: the <b>oxygen and power it costs</b> to start. ⏱️: how long you have.",
+        "<b>URGENT</b> means something is broken right now: fix it soon or the hull gets damaged.",
+        HELP_UNITS,
+        "⭐ Every task you finish also gives points. Points become stars at the end of the mission.",
+      ]) +
       invHtml() +
-      `<div class="row"><div><b>⚡ Power grid repair${f ? " (URGENT: " + f.t + ")" : ""}</b><small>${f ? "Rotate the power tiles to bring solar power back to every module." : "No fault right now. Practice for +10 units."}</small></div><button data-m="wires">Play</button></div>` +
-      `<div class="row"><div><b>🔌 Fix the wires</b><small>Connect each colored plug to the socket with the same color before time runs out.</small></div><button data-m="plugs">Play</button></div>` +
-      `<div class="row"><div><b>🌱 Greenhouse</b><small>Plant, water and light a tomato plant step by step. Too much light burns it and wastes power!</small></div><button data-m="garden">Open</button></div>` +
-      `<div class="row"><div><b>☢️ Storm shield drill${st.state ? " (LIVE STORM!)" : ""}</b><small>${st.state ? "Block the particles with your polymer shield to cut the real dose." : "Practice for +15 units. In a real storm it cuts your dose by up to 60%."}</small></div><button data-m="storm">${st.state ? "Defend!" : "Practice"}</button></div>` +
-      `<div class="row"><div><b>🚙 Dark crater rover</b><small>Drive into a dark crater, scan for ice and minerals and bring them home.</small></div><button data-m="maze">Play</button></div>` +
-      `<div class="row"><div><b>🚀 Surface expedition</b><small>${mod("airlock") ? "Explore the open lunar surface, mine, scan discoveries and bring loot home." : "Your ship has no airlock, so this is locked."}</small></div><button data-m="exp" ${mod("airlock") ? "" : "disabled"}>Go</button></div>`,
+      `<div class="row"><div><b>⚡ Power grid repair${f ? " (URGENT: " + f.t + ")" : ""}</b><small>${f ? "Rotate the power tiles to bring solar power back to every module." : "No fault right now. Practice for +10 units."}</small>${tags(f ? "+20 ◈ · +15 hull · ⭐50" : "+10 ◈ · +15 hull · ⭐50", [2, 3], "50 s")}</div><button data-m="wires">Play</button></div>` +
+      `<div class="row"><div><b>🔌 Fix the wires</b><small>Connect each colored plug to the socket with the same color before time runs out.</small>${tags("+10 ◈ · +5 hull · ⭐50", [2, 3], "25 s")}</div><button data-m="plugs">Play</button></div>` +
+      `<div class="row"><div><b>🌱 Greenhouse</b><small>Plant, water and light a tomato plant step by step. Too much light burns it and wastes power!</small>${tags("+3 🍲 · +10 🫧 · ⭐40", [1, 1], "")}</div><button data-m="garden">Open</button></div>` +
+      `<div class="row"><div><b>☢️ Storm shield drill${st.state ? " (LIVE STORM!)" : ""}</b><small>${st.state ? "Block the particles with your polymer shield to cut the real dose." : "Practice for +15 units. In a real storm it cuts your dose by up to 60%."}</small>${tags(st.state ? "−60% storm dose · ⭐30-70" : "+15 ◈ · ⭐30-70", [2, 3], "28 s")}</div><button data-m="storm">${st.state ? "Defend!" : "Practice"}</button></div>` +
+      `<div class="row"><div><b>🚙 Dark crater rover</b><small>Drive into a dark crater, scan for ice and minerals and bring them home.</small>${tags("ice, ilmenite, regolith · ⭐50", [2, 3], "45 s")}</div><button data-m="maze">Play</button></div>` +
+      `<div class="row"><div><b>🚀 Surface expedition</b><small>${mod("airlock") ? "Explore the open lunar surface, mine, scan discoveries and bring loot home." : "Your ship has no airlock, so this is locked."}</small>${tags("materials, discoveries · ⭐30 each", [4, 4], "until oxygen runs low")}</div><button data-m="exp" ${mod("airlock") ? "" : "disabled"}>Go</button></div>`,
   );
 }
 function openCraft() {
   openModal(
     head("🔧 Workshop") +
+      helpBox("How this screen works", [
+        "<b>Craft</b> turns raw materials (regolith, ilmenite, ice, carbon) into useful parts: metal plates, polymer plates, solar cells, oxygen and meals.",
+        "Get raw materials on <b>expeditions</b> or in the <b>dark crater rover</b>. The bar at the top shows what you have now.",
+        "The <b>Supply store</b> sells things for units. " + HELP_UNITS,
+        "Parts are used in <b>Build</b>: for example, a 🛡️ shield wall needs a polymer plate and a ☀️ solar panel needs a solar cell.",
+      ]) +
       invHtml() +
       RC.map(
         (r, i) =>

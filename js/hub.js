@@ -176,7 +176,7 @@ function buildPalette() {
   ];
   const sel = all.find((a) => a.k === R.tool);
   $("pal").innerHTML =
-    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><small>${!sel ? "then tap the base" : sel.cost ? "Cost: " + costIcons(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small></div>` +
+    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><small>${!sel ? "then tap the base" : sel.cost ? "Cost: " + costIcons(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small><small class="bal">You have: ◈${S.units} 🪨${S.inv.regolith} 🔩${S.inv.metal} 🟪${S.inv.polymer} 🔋${S.inv.solar}</small></div>` +
     all
       .map(
         (a) =>

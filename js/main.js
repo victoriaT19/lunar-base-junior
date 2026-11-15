@@ -23,8 +23,11 @@ function updateHud(dt) {
           ["lamp", "poster", "flag", "plant", "window", "bed"].some((d) => cnt(d) >= 1),
         )}${tick("🍲 Eat", S.flags.ate)}${tick("😴 Sleep", S.flags.slept)}${tick("🤖 Hi KAI", S.flags.petted)}</div>`
       : "";
-  $("info").innerHTML =
-    `<b>${S.name}</b> · ⏳ ${Math.max(0, missionLeft() / DAYLEN).toFixed(1)} days left · ◈ ${S.units} · 🍲 ${S.rations}<br>${c ? `<small>🎯 STEP ${S.ch + 1} OF ${CHAPTERS.length}: ${c.t.toUpperCase()}</small><br>${c.goal}${g0}` : mainDone() ? "<small>🏁 Main mission complete!</small>" : "<small>Plan your mission</small>"}`;
+  const infoH = `<b>${S.name}</b> · ⏳ ${Math.max(0, missionLeft() / DAYLEN).toFixed(1)} days left · ◈ ${S.units} · 🍲 ${S.rations} <button class="alt hbtn" id="bHelp" type="button" aria-label="How resources work">❓</button><br><small class="mgoal">🏁 MAIN GOAL: ${mainGoal()}</small><br>${c ? `<small>👉 NOW · STEP ${S.ch + 1} OF ${CHAPTERS.length}: ${c.t.toUpperCase()}</small><br>${c.goal}${g0}` : mainDone() ? "<small>🏁 Main mission complete! Press 🚀 Return to Earth.</small>" : "<small>Plan your mission</small>"}`;
+  if ($("info").dataset.h !== infoH) {
+    $("info").innerHTML = infoH;
+    $("info").dataset.h = infoH;
+  }
   let b = "";
   if (R.fault)
     b += `<div class="wc">🔧 FAULT: ${R.fault.t} <button data-b="${R.fault.k === "power" ? "wires" : "plugs"}">Repair</button></div>`;

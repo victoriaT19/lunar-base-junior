@@ -1158,3 +1158,53 @@ body.big #bar .bmain button {
 .mcard.locked {
   cursor: not-allowed;
 }
+.help {
+  background: #10164a;
+  border: 2px solid #3a4aa8;
+  padding: 6px 10px;
+  margin: 0 0 10px;
+  line-height: 1.7;
+}
+.help summary {
+  cursor: pointer;
+  color: #ffd166;
+  font-weight: bold;
+}
+.help ul {
+  margin: 6px 0 2px;
+  padding-left: 18px;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.tg {
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border: 1px solid #3a4aa8;
+  background: #141a50;
+}
+.tg.good {
+  border-color: #7bd88f;
+  color: #b6f5bf;
+}
+.tg.bad {
+  border-color: #ff8a9a;
+  color: #ffc2ca;
+}
+.hbtn {
+  padding: 0 6px;
+  font-size: 0.8em;
+  pointer-events: auto;
+}
+.mgoal {
+  color: #ffd166;
+}
+#pal .palh .bal {
+  color: #7bd88f;
+}
+#info {
+  pointer-events: auto;
+}

@@ -208,7 +208,14 @@ function renderGarden() {
   const bar = (l, v, c) =>
     `<div class="gbar"><span>${l}</span><div class="bt"><i style="width:${clamp(v, 0, 100)}%;background:${c}"></i></div></div>`;
   const step = (n, t, done) => `<li class="${done ? "ok" : ""}">${done ? "✅" : n + "."} ${t}</li>`;
-  box.innerHTML = `<div class="garden"><div class="gplant" aria-hidden="true">${ic}</div><div><b>${g.dead ? "The plant died" : ST[g.stage]}</b>${g.stage >= 2 && !g.dead ? bar("💧 Water", g.water, "#4cc9f0") + bar("🌱 Growth", g.grow, "#7bd88f") + bar("💡 Light time", (g.ledT / 75) * 100, g.ledT > 55 ? "#ff5d73" : "#ffd166") : ""}<ol class="gsteps">${step(1, "Plant a seed in the grow pillow", g.stage >= 1)}${step(2, "Water it (uses 1 ice or 5 units)", g.stage >= 2)}${step(3, "Turn on the red and blue LED light to grow it, but turn it off before the light bar fills up!", g.stage >= 3)}${step(4, "Harvest the tomatoes", false)}</ol><div class="gbtns2">${g.stage === 0 || g.dead ? `<button data-g="${g.dead ? "clear" : "seed"}">${g.dead ? "🧹 Clean the tray" : "🫘 Plant seed"}</button>` : ""}${g.stage >= 1 && !g.dead && g.stage < 4 ? `<button data-g="water">💧 Water</button>` : ""}${g.stage >= 2 && !g.dead && g.stage < 4 ? `<button data-g="led" class="${g.led ? "on" : ""}">💡 LED ${g.led ? "ON (uses power)" : "OFF"}</button>` : ""}${g.stage === 4 && !g.dead ? `<button data-g="harvest">🍅 Harvest</button>` : ""}</div></div></div><div class="real">🔬 Real science: plants in space grow without soil (hydroponics) because lunar regolith has no organic matter. NASA's Veggie experiment uses "plant pillows" with clay and fertilizer so water does not form bubbles around the roots in low gravity. Red and blue LEDs give plants exactly the light they need for photosynthesis while saving power. Every action here costs a little oxygen and power, just like on a real base.</div>`;
+  box.innerHTML =
+    helpBox("How this screen works", [
+      "Follow the 4 steps in order. Each action costs a little oxygen and power.",
+      "💧 Water goes down over time: water again before the bar empties or the plant dries out.",
+      "💡 The LED makes the plant grow but uses power. The light bar shows how long it has been on: turn it off before it fills, or the plant burns.",
+      "Harvest gives 3 rations (food) and 10 oxygen.",
+    ]) +
+    `<div class="garden"><div class="gplant" aria-hidden="true">${ic}</div><div><b>${g.dead ? "The plant died" : ST[g.stage]}</b>${g.stage >= 2 && !g.dead ? bar("💧 Water", g.water, "#4cc9f0") + bar("🌱 Growth", g.grow, "#7bd88f") + bar("💡 Light time", (g.ledT / 75) * 100, g.ledT > 55 ? "#ff5d73" : "#ffd166") : ""}<ol class="gsteps">${step(1, "Plant a seed in the grow pillow", g.stage >= 1)}${step(2, "Water it (uses 1 ice or 5 units)", g.stage >= 2)}${step(3, "Turn on the red and blue LED light to grow it, but turn it off before the light bar fills up!", g.stage >= 3)}${step(4, "Harvest the tomatoes", false)}</ol><div class="gbtns2">${g.stage === 0 || g.dead ? `<button data-g="${g.dead ? "clear" : "seed"}">${g.dead ? "🧹 Clean the tray" : "🫘 Plant seed"}</button>` : ""}${g.stage >= 1 && !g.dead && g.stage < 4 ? `<button data-g="water">💧 Water</button>` : ""}${g.stage >= 2 && !g.dead && g.stage < 4 ? `<button data-g="led" class="${g.led ? "on" : ""}">💡 LED ${g.led ? "ON (uses power)" : "OFF"}</button>` : ""}${g.stage === 4 && !g.dead ? `<button data-g="harvest">🍅 Harvest</button>` : ""}</div></div></div><div class="real">🔬 Real science: plants in space grow without soil (hydroponics) because lunar regolith has no organic matter. NASA's Veggie experiment uses "plant pillows" with clay and fertilizer so water does not form bubbles around the roots in low gravity. Red and blue LEDs give plants exactly the light they need for photosynthesis while saving power. Every action here costs a little oxygen and power, just like on a real base.</div>`;
   box.querySelectorAll("[data-g]").forEach((b) => (b.onclick = () => gardenAct(b.dataset.g)));
 }
 
@@ -341,4 +348,29 @@ document.addEventListener("click", (e) => {
     return;
   S.mission = id;
   restartMission();
+});
+function mainGoal() {
+  const m = S.mission || "hopper";
+  return (
+    {
+      hopper: "finish the 6 steps, then return to Earth before time runs out",
+      debris: "clean up the junk and make a safe landing zone (3 steps)",
+      greenhouse: "build a working lunar greenhouse (3 steps)",
+      signal: "find the source of the strange signal (3 steps)",
+    }[m] || ""
+  );
+}
+function openResHelp() {
+  openModal(
+    head("❓ How resources work") +
+      `<div class="row"><div><b>🫧 Oxygen</b><small>The life support makes oxygen using power. Every task uses a little. If oxygen reaches 0, the mission is lost. Refill: keep power above 0, harvest plants (+10), and fix CO₂ faults fast.</small></div></div>` +
+      `<div class="row"><div><b>⚡ Power</b><small>Recharges by itself with sunlight. ▲ means charging, ▼ means draining. More power: build ☀️ solar panels and fix power faults. Less waste: turn off the greenhouse LED and keep the base small. Storms cut solar power in half.</small></div></div>` +
+      `<div class="row"><div><b>🍲 Food</b><small>Goes down over time. Eat at the galley (uses 1 ration). Get rations from the ship plan, the greenhouse, plant boxes or the Workshop store. At 0 for 1 minute, the mission is lost.</small></div></div>` +
+      `<div class="row"><div><b>🛠️ Hull</b><small>Damaged by faults that are not fixed and by solar storms. Repair: play the power grid or wires missions. Shield walls make storms hit softer.</small></div></div>` +
+      `<div class="row"><div><b>😴 Rest, 💛 Mood, ☢️ Dose</b><small>Sleep in the bunk to rest. Decorations and food raise mood. Radiation dose adds up over time and in storms: at ${DLIM} mSv the astronaut must be rescued.</small></div></div>` +
+      `<div class="row"><div><b>◈ Units and ⭐ points</b><small>${HELP_UNITS.replace(/<[^>]+>/g, "")} Points come from tasks, chapters and discoveries and become 1 to 5 stars at the end.</small></div></div>`,
+  );
+}
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "bHelp") openResHelp();
 });
