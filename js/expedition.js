@@ -641,7 +641,7 @@ function update(dt) {
   G.st.maxDist = Math.max(G.st.maxDist, Math.hypot(p.x, p.y));
 
   let mining = false;
-  if ((mineHeld || keys[" "]) && G.en > 1) {
+  if ((mineHeld || keys[" "] || keys.enter) && G.en > 1 && !G.paused) {
     let target = G.mine ? G.mine.n : null;
     if (
       !target ||
@@ -1420,10 +1420,23 @@ window.addEventListener("keyup", (e) => {
 });
 cv.addEventListener("pointerdown", (e) => {
   ensureAudio();
+  if (e.button !== 0) return;
   mineHeld = A.toggleMine ? !mineHeld : true;
 });
-window.addEventListener("pointerup", () => {
-  if (!A.toggleMine) mineHeld = false;
+["pointerup", "pointercancel"].forEach((ev) =>
+  window.addEventListener(ev, () => {
+    if (!A.toggleMine) mineHeld = false;
+  }),
+);
+window.addEventListener("blur", () => {
+  mineHeld = false;
+  Object.keys(keys).forEach((k) => (keys[k] = false));
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    mineHeld = false;
+    Object.keys(keys).forEach((k) => (keys[k] = false));
+  }
 });
 
 const joyEl = $("joy"),

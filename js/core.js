@@ -124,7 +124,7 @@ function loadSave() {
   return fixSave(loadSave0());
 }
 function fixSave(o) {
-  o.lang = "en";
+  o.lang = LANG;
   if (!(o.acc >= 0 && o.acc <= 3)) o.acc = 0;
   return o;
 }

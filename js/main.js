@@ -78,6 +78,7 @@ function loop(ts) {
     if (MG) mgDraw(ts);
   });
   safe(() => updateHud(dt));
+  safe(() => tutCheck());
 }
 
 $("bar").onclick = (e) => {
@@ -335,3 +336,5 @@ loadDonki();
 loadWx();
 loadTech();
 requestAnimationFrame(loop);
+$("bLang").textContent = LANG === "pt" ? "🌐 English" : "🌐 Português";
+$("bLang").onclick = () => setLang(LANG === "pt" ? "en" : "pt");

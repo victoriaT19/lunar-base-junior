@@ -435,6 +435,7 @@ function openStory() {
   const p = S.plan;
   openModal(
     head("📖 Story") +
+      `<p><button class="alt" id="bTut" type="button">❓ How to play</button></p>` +
       rows +
       (p
         ? `<h3 style="margin:10px 0 4px">Your mission plan</h3><div class="row"><div><small>Launch mass ${Math.round(p.mass)} kg · transit ${p.days.toFixed(1)} days</small></div></div>`

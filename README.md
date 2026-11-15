@@ -53,7 +53,9 @@ Values are simplified for education.
 - Full keyboard play with visible focus; Esc closes menus.
 - Screen reader announcements.
 - The game follows the system settings for reduced motion and contrast.
-- English and Portuguese in the character creator.
+- Full Portuguese (PT-BR) translation: use the 🌐 button on the title screen.
+- Plays on phones in landscape (tap to walk, touch controls on expeditions).
+- A short tutorial at the start, also under Story → How to play.
 
 ## How it works
 

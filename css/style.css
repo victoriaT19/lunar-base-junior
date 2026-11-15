@@ -1051,3 +1051,98 @@ body.rm *::before {
 body.big #bar .bmain button {
   font-size: clamp(8px, 0.9vw, 11px);
 }
+.langbtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  font-size: clamp(8px, 1vw, 12px);
+}
+.tut {
+  text-align: center;
+  padding: 10px 6px;
+}
+.tutico {
+  font-size: 56px;
+  margin-bottom: 6px;
+}
+.tut p {
+  max-width: 520px;
+  margin: 8px auto 14px;
+  line-height: 1.7;
+}
+.tutdots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.tutdots span {
+  width: 10px;
+  height: 10px;
+  background: #2a3470;
+  border: 2px solid #0b0f2a;
+}
+.tutdots span.on {
+  background: #ffd166;
+}
+.tutbtns {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+#bar .bmain button span {
+  text-align: center;
+  white-space: nowrap;
+}
+#rotate {
+  display: none;
+}
+@media (max-height: 520px) {
+  .hud {
+    font-size: 11px;
+  }
+  #bars {
+    width: 22%;
+    min-width: 130px;
+  }
+  #bar .bmain button {
+    font-size: 5px;
+    width: 54px;
+    padding: 4px 1px;
+  }
+  #bar .bmain button i {
+    font-size: 15px;
+  }
+  #bar .bside button {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .modal {
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+}
+@media (orientation: portrait) and (max-width: 760px) {
+  #rotate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #06081a;
+    color: #fff;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+    padding: 24px;
+    font-family: "Press Start 2P", monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  #rotate b {
+    font-size: 48px;
+  }
+}

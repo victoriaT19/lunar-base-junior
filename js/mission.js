@@ -208,3 +208,51 @@ function renderGarden() {
   box.innerHTML = `<div class="garden"><div class="gplant" aria-hidden="true">${ic}</div><div><b>${g.dead ? "The plant died" : ST[g.stage]}</b>${g.stage >= 2 && !g.dead ? bar("💧 Water", g.water, "#4cc9f0") + bar("🌱 Growth", g.grow, "#7bd88f") + bar("💡 Light time", (g.ledT / 75) * 100, g.ledT > 55 ? "#ff5d73" : "#ffd166") : ""}<ol class="gsteps">${step(1, "Plant a seed in the grow pillow", g.stage >= 1)}${step(2, "Water it (uses 1 ice or 5 units)", g.stage >= 2)}${step(3, "Turn on the red and blue LED light to grow it, but turn it off before the light bar fills up!", g.stage >= 3)}${step(4, "Harvest the tomatoes", false)}</ol><div class="gbtns2">${g.stage === 0 || g.dead ? `<button data-g="${g.dead ? "clear" : "seed"}">${g.dead ? "🧹 Clean the tray" : "🫘 Plant seed"}</button>` : ""}${g.stage >= 1 && !g.dead && g.stage < 4 ? `<button data-g="water">💧 Water</button>` : ""}${g.stage >= 2 && !g.dead && g.stage < 4 ? `<button data-g="led" class="${g.led ? "on" : ""}">💡 LED ${g.led ? "ON (uses power)" : "OFF"}</button>` : ""}${g.stage === 4 && !g.dead ? `<button data-g="harvest">🍅 Harvest</button>` : ""}</div></div></div><div class="real">🔬 Real science: plants in space grow without soil (hydroponics) because lunar regolith has no organic matter. NASA's Veggie experiment uses "plant pillows" with clay and fertilizer so water does not form bubbles around the roots in low gravity. Red and blue LEDs give plants exactly the light they need for photosynthesis while saving power. Every action here costs a little oxygen and power, just like on a real base.</div>`;
   box.querySelectorAll("[data-g]").forEach((b) => (b.onclick = () => gardenAct(b.dataset.g)));
 }
+
+const TUT = [
+  [
+    "🚶",
+    "Walk around",
+    "Use WASD or the arrow keys, or tap the floor. On a phone, just tap where you want to go.",
+  ],
+  [
+    "🫧",
+    "Stay alive",
+    "Watch the 4 bars: oxygen, power, food and hull. If one of them reaches zero, the mission is lost.",
+  ],
+  [
+    "🎯",
+    "Do your jobs",
+    "Tap the console for missions, the galley to eat and the bunk to sleep. Every task costs a little oxygen and power.",
+  ],
+  [
+    "🧱",
+    "Build your home",
+    "Open Build to place furniture on the floor and panels on the walls. A bigger base uses more power and mission time.",
+  ],
+  [
+    "🤖",
+    "KAI can help",
+    "Your robot KAI can finish a task or show the way, but it uses half of your oxygen. Finish the main mission and get home in time to earn stars!",
+  ],
+];
+function openTutorial(i) {
+  i = i || 0;
+  S.flags.tut = 1;
+  const t = TUT[i];
+  openModal(
+    `<div class="tut"><div class="tutico" aria-hidden="true">${t[0]}</div><h2>${t[1]}</h2><p>${t[2]}</p><div class="tutdots">${TUT.map((_, k) => `<span class="${k === i ? "on" : ""}"></span>`).join("")}</div><div class="tutbtns">${i > 0 ? `<button class="alt" id="tutBack">◀ Back</button>` : `<button class="alt" id="tutSkip">Skip</button>`}<button id="tutNext">${i < TUT.length - 1 ? "Next ▶" : "Let's go! 🚀"}</button></div></div>`,
+  );
+  if ($("tutBack")) $("tutBack").onclick = () => openTutorial(i - 1);
+  if ($("tutSkip")) $("tutSkip").onclick = () => closeModal();
+  $("tutNext").onclick = () => (i < TUT.length - 1 ? openTutorial(i + 1) : closeModal());
+  writeSave();
+}
+function tutCheck() {
+  if (S.flags.tut || !S.planned || R.paused || R.storyOpen || R.ended) return;
+  if (document.querySelector(".overlay.on")) return;
+  openTutorial(0);
+}
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "bTut") openTutorial(0);
+});

@@ -753,3 +753,58 @@ body.rm *::before {
     grid-template-columns: 1fr;
   }
 }
+#bar .bmain button span {
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+#rotate {
+  display: none;
+}
+@media (max-height: 520px) {
+  .hud {
+    font-size: 11px;
+  }
+  #bars {
+    width: 22%;
+    min-width: 130px;
+  }
+  #bar .bmain button {
+    font-size: 6px;
+    width: 50px;
+    padding: 4px 1px;
+  }
+  #bar .bmain button i {
+    font-size: 15px;
+  }
+  #bar .bside button {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .modal {
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+}
+@media (orientation: portrait) and (max-width: 760px) {
+  #rotate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #06081a;
+    color: #fff;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+    padding: 24px;
+    font-family: "Press Start 2P", monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  #rotate b {
+    font-size: 48px;
+  }
+}
