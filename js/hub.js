@@ -167,6 +167,12 @@ function costWhere(cost) {
     })
     .join(" ");
 }
+function costSrc(cost) {
+  return Object.keys(cost)
+    .filter((k) => ITEMS[k])
+    .map((k) => `<span class="cs">📍 <b>${tr(ITEMS[k].n)}</b>: ${tr(ITEMS[k].src)}</span>`)
+    .join("");
+}
 function buildPalette() {
   const all = [
     ...Object.keys(BLK).map((k) => ({
@@ -206,7 +212,7 @@ function buildPalette() {
   ];
   const sel = all.find((a) => a.k === (R.palHover || R.tool));
   $("pal").innerHTML =
-    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><em class="pdesc">${sel ? PDESC[String(sel.k).replace("stash:", "")] || "" : "Tap a button below to see what it does."}</em><small>${!sel ? "then tap the base" : sel.cost ? tr("Cost:") + " " + costWhere(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small><small class="bal">You have: ◈${S.units} 🪨${S.inv.regolith} 🔩${S.inv.metal} 🟪${S.inv.polymer} 🔋${S.inv.solar}</small></div><div class="palg">` +
+    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b>${sel && sel.cost ? `<span class="psrc">${costSrc(sel.cost)}</span>` : ""}<em class="pdesc">${sel ? PDESC[String(sel.k).replace("stash:", "")] || "" : "Tap a button below to see what it does."}</em><small>${!sel ? "then tap the base" : sel.cost ? tr("Cost:") + " " + costWhere(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small><small class="bal">You have: ◈${S.units} 🪨${S.inv.regolith} 🔩${S.inv.metal} 🟪${S.inv.polymer} 🔋${S.inv.solar}</small></div><div class="palg">` +
     all
       .map(
         (a) =>

@@ -59,7 +59,7 @@ function openCraft() {
         "The <b>Supply store</b> sells things for units. " + HELP_UNITS,
         "Parts are used in <b>Build</b>: for example, a 🛡️ shield wall needs a polymer plate and a ☀️ solar panel needs a solar cell.",
       ]) +
-      invHtml(true) +
+      invHtml() +
       RC.map(
         (r, i) =>
           `<div class="row"><div><b>${r.n}</b><small>${tr("Needs")} ${costTxt(r.cost)} → ${tr(r.fx)}</small></div><button data-craft="${i}" ${afford(r.cost) ? "" : "disabled"}>Make</button></div>`,
