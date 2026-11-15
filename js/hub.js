@@ -104,6 +104,27 @@ function toggleBuild() {
   document.body.classList.toggle("building", R.build);
   if (R.build) buildPalette();
 }
+const PDESC = {
+  brick: "Basic wall. Blocks a little radiation (+shield).",
+  polymer: "Strong shield wall. Storms hurt much less.",
+  window: "See the Moon outside. Raises mood.",
+  solar: "Makes power from sunlight. More energy for the base.",
+  plant: "Grows food over time. Gives rations.",
+  bed: "Extra place to sleep and rest.",
+  lamp: "Brightens the room. Raises mood.",
+  poster: "A picture of Earth. Raises mood.",
+  antenna: "Better signal with Earth. Raises mood.",
+  flag: "A flag for your base. Raises mood a lot.",
+  table: "A place to eat together. Raises mood.",
+  "mod:sleep": "Ready room: bunk, lamp and poster in one go.",
+  "mod:garden": "Ready room: plant boxes that make food.",
+  "mod:wall": "Ready room: thick shield walls against radiation.",
+  "mod:cozy": "Ready room: decorations that raise mood.",
+  "mod:yard": "Ready room: many solar panels for power.",
+  move: "Pick up a piece and put it somewhere else.",
+  store: "Save a piece for later. Place it again for free.",
+  erase: "Remove a piece and get its materials back.",
+};
 const SHORTN = {
   brick: "Brick",
   polymer: "Shield",
@@ -142,14 +163,14 @@ function buildPalette() {
     ...Object.keys(BLK).map((k) => ({
       k,
       e: BLK[k].e,
-      n: SHORTN[k] || BLK[k].n,
+      n: BLK[k].n,
       full: BLK[k].n,
       cost: BLK[k].cost,
     })),
     ...Object.keys(MODS).map((k) => ({
       k,
       e: MODS[k].e,
-      n: SHORTN[k] || MODS[k].n,
+      n: MODS[k].n,
       full: MODS[k].n + " (room)",
       cost: modCost(MODS[k]),
     })),
@@ -158,7 +179,7 @@ function buildPalette() {
       .map((id) => ({
         k: "stash:" + id,
         e: BLK[id].e,
-        n: (SHORTN[id] || BLK[id].n) + " ×" + S.stash[id],
+        n: BLK[id].n + " ×" + S.stash[id],
         full: BLK[id].n + " (stored)",
         cost: null,
         tag: "stored",
@@ -174,17 +195,31 @@ function buildPalette() {
     { k: "store", e: "📦", n: "Store", full: "Put a piece in storage", cost: null, tag: "keep it" },
     { k: "erase", e: "🧽", n: "Remove", full: "Remove a piece", cost: null, tag: "refund" },
   ];
-  const sel = all.find((a) => a.k === R.tool);
+  const sel = all.find((a) => a.k === (R.palHover || R.tool));
   $("pal").innerHTML =
-    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><small>${!sel ? "then tap the base" : sel.cost ? "Cost: " + costIcons(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small><small class="bal">You have: ◈${S.units} 🪨${S.inv.regolith} 🔩${S.inv.metal} 🟪${S.inv.polymer} 🔋${S.inv.solar}</small></div>` +
+    `<div class="palh"><span class="pbig" aria-hidden="true">${sel ? sel.e : "🧱"}</span><b>${sel ? sel.full : "Pick a piece"}</b><em class="pdesc">${sel ? PDESC[String(sel.k).replace("stash:", "")] || "" : "Tap a button below to see what it does."}</em><small>${!sel ? "then tap the base" : sel.cost ? "Cost: " + costIcons(sel.cost) : sel.k === "move" ? (R.holding ? "Tap a free spot" : "Tap a piece to pick up") : sel.k === "store" ? "Tap a piece to store" : sel.k === "erase" ? "Gives it back" : "Free: it was stored"}</small><small>${sel && BLK[heldId()] && !String(heldId()).startsWith("mod:") ? (WALLI.has(heldId()) ? "🧱 Goes on a wall" : "🪑 Goes on the floor") : "🏠 −" + sizePenalty().toFixed(1) + " days"}</small><small class="bal">You have: ◈${S.units} 🪨${S.inv.regolith} 🔩${S.inv.metal} 🟪${S.inv.polymer} 🔋${S.inv.solar}</small></div><div class="palg">` +
     all
       .map(
         (a) =>
           `<button data-tool="${a.k}" class="${R.tool === a.k ? "on" : ""} ${a.cost && !afford(a.cost) ? "no" : ""}" title="${a.full}${a.cost ? ": " + costTxt(a.cost) : ""}" aria-label="${a.full}${a.cost ? ", costs " + costTxt(a.cost) : ""}"><i aria-hidden="true">${a.e}</i><span>${a.n}</span><small>${a.cost ? costIcons(a.cost) : a.tag || ""}</small></button>`,
       )
       .join("") +
-    `<button class="palx" data-x="1" aria-label="Close build mode" title="Close">✕</button>`;
+    `</div><button class="palx" data-x="1" aria-label="Close build mode" title="Close">✕</button>`;
 }
+$("pal").addEventListener("mouseover", (e) => {
+  const b = e.target.closest("button[data-tool]");
+  const k = b ? b.dataset.tool : null;
+  if (k !== (R.palHover || null)) {
+    R.palHover = k;
+    buildPalette();
+  }
+});
+$("pal").addEventListener("mouseleave", () => {
+  if (R.palHover) {
+    R.palHover = null;
+    buildPalette();
+  }
+});
 $("pal").onclick = (e) => {
   const b = e.target.closest("button");
   if (!b) return;
