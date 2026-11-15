@@ -163,8 +163,7 @@ function costWhere(cost) {
     .map((k) => {
       const have = k === "units" ? S.units : S.inv[k];
       const n = k === "units" ? tr("units") : tr(ITEMS[k].n);
-      const w = k === "units" ? tr("🎯 from tasks") : tr(ITEMS[k].w);
-      return `<span class="cw ${have >= cost[k] ? "" : "lack"}">${COSTI[k]}${cost[k]} ${n} <i>(${w})</i></span>`;
+      return `<span class="cw ${have >= cost[k] ? "" : "lack"}">${COSTI[k]}${cost[k]} ${n}</span>`;
     })
     .join(" ");
 }
