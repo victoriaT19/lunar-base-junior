@@ -2,7 +2,7 @@
 
 A pixel art mission simulator for kids, built for the NASA Space Apps Challenge 2026 challenge **"Build a Mission Simulator for Junior Astronauts"**.
 
-**Play it:** [https://victoriat19.github.io/nasa/](https://victoriat19.github.io/lunar-base-junior/)
+**Play it:** [https://victoriat19.github.io/lunar-base-junior/](https://victoriat19.github.io/lunar-base-junior/)
 
 Create your own astronaut, pack the ship on Earth, fly to the Moon, build a base at the lunar south pole and explore the surface for samples. Every choice is a real mission trade-off between life support, radiation protection, energy and food.
 
