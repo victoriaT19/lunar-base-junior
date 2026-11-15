@@ -1146,3 +1146,15 @@ body.big #bar .bmain button {
     font-size: 48px;
   }
 }
+.mcard {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.mcard.cur {
+  outline: 3px solid #7bd88f;
+}
+.mcard.locked {
+  cursor: not-allowed;
+}

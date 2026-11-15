@@ -31,9 +31,10 @@ function spend(o2, pwr, why) {
 function missionBoard() {
   const ts = totalStars();
   return `<h3 style="margin:6px 0 4px">🗺️ Missions</h3><div class="mboard">${MISSIONS.map((m) => {
-    const open = ts >= m.need && m.id === "hopper";
+    const open = ts >= m.need;
     const best = (S.best || {})[m.id] || 0;
-    return `<div class="mcard ${open ? "" : "locked"}" aria-label="${m.n}${open ? "" : ", locked"}"><span class="mico">${open ? m.e : "🔒"}</span><b>${m.n}</b><small>${open ? (best ? "Best: " + starTxt(best) : "Playing now") : m.need > ts ? `Needs ${m.need} ★ (you have ${ts})` : "Coming soon"}</small></div>`;
+    const cur = (S.mission || "hopper") === m.id;
+    return `<button type="button" class="mcard ${open ? "" : "locked"} ${cur ? "cur" : ""}" data-mis="${m.id}" ${open ? "" : "disabled"} aria-pressed="${cur}" aria-label="${m.n}${open ? "" : ", locked"}"><span class="mico">${open ? m.e : "🔒"}</span><b>${m.n}</b><small>${!open ? `Needs ${m.need} ★ (you have ${ts})` : cur ? "✅ Selected" + (best ? " · Best: " + starTxt(best) : "") : best ? "Best: " + starTxt(best) : "▶ Tap to play"}</small></button>`;
   }).join("")}</div>`;
 }
 
@@ -69,7 +70,8 @@ function endGame(kind) {
   const st = win ? starsFor(S.pts || 0) : 0;
   if (win) {
     S.best = S.best || {};
-    S.best.hopper = Math.max(S.best.hopper || 0, st);
+    const mid = S.mission || "hopper";
+    S.best[mid] = Math.max(S.best[mid] || 0, st);
   }
   const T = {
     win: [
@@ -115,6 +117,7 @@ function restartMission() {
     char: S.char,
     level: S.level,
     best: S.best || {},
+    mission: S.mission || "hopper",
   };
   S = Object.assign(defSave(), keep, { started: true, ch: -1 });
   writeSave();
@@ -255,4 +258,87 @@ function tutCheck() {
 }
 document.addEventListener("click", (e) => {
   if (e.target && e.target.id === "bTut") openTutorial(0);
+});
+
+const MSETS = {
+  debris: [
+    {
+      t: "Junk on the Moon",
+      x: "Old rocket parts and broken equipment are scattered around the base. Space junk is a real problem: it can damage new landers and rovers.",
+      d: "NASA tracks space debris because even small pieces moving fast can hit like bullets. On the Moon, old hardware from past missions is still lying around.",
+      goal: "Bring 8 things home from outside (expedition or dark crater rover).",
+      ok: () => (S.lootTotal || 0) >= 8,
+    },
+    {
+      t: "Recycle the Scrap",
+      x: "KAI has an idea: melt the junk into new metal plates. Recycling saves rocket launches from Earth.",
+      d: "Every kilogram sent to the Moon costs a lot of fuel. Future bases will recycle metal, water and air as much as possible.",
+      goal: "Have 3 metal plates (🔧 Craft: smelt ilmenite).",
+      ok: () => (S.inv.metal || 0) >= 3,
+    },
+    {
+      t: "Safe Landing Zone",
+      x: "With the junk gone, fix the power grid so the next lander can land safely with the landing lights on.",
+      d: "Landing pads with lights and clean ground help landers avoid kicking up dust and rocks.",
+      goal: "Fix the power grid (🎯 Missions) and build 1 ☀️ solar panel.",
+      ok: () => (S.flags.repaired || 0) >= 1 && cnt("solar") >= 1,
+    },
+  ],
+  greenhouse: [
+    {
+      t: "First Seed",
+      x: "Mission Control wants fresh food on the Moon. Your job: start the first lunar greenhouse.",
+      d: "NASA's Veggie and Advanced Plant Habitat on the ISS grow lettuce, radishes and peppers without soil.",
+      goal: "Plant a seed and water it (🎯 Missions → Greenhouse).",
+      ok: () => S.garden && S.garden.stage >= 2,
+    },
+    {
+      t: "First Harvest",
+      x: "Use the LED light carefully. Too much light burns the plant and wastes power.",
+      d: "Red and blue LEDs give plants exactly the colors they use for photosynthesis.",
+      goal: "Harvest the tomatoes once.",
+      ok: () => (S.flags.plants || 0) >= 1,
+    },
+    {
+      t: "Green Base",
+      x: "One plant is a start. A real greenhouse needs many plants to feed a crew.",
+      d: "Plants also make oxygen and recycle water, so a greenhouse helps the life support too.",
+      goal: "Build 3 🌱 plant boxes and have 8 rations.",
+      ok: () => cnt("plant") >= 3 && S.rations >= 8,
+    },
+  ],
+  signal: [
+    {
+      t: "Strange Readings",
+      x: "The console picks up a strange repeating signal from somewhere on the surface. Aliens? Or something else?",
+      d: "Scientists listen to space with radio antennas. Most strange signals turn out to come from natural objects or our own machines.",
+      goal: "Scan 2 discoveries on expeditions.",
+      ok: () => S.disc.length >= 2,
+    },
+    {
+      t: "Bigger Ears",
+      x: "To find the source, the base needs a stronger antenna.",
+      d: "The far side of the Moon is one of the quietest places for radio astronomy, because Earth's radio noise cannot reach it.",
+      goal: "Build 1 📡 antenna.",
+      ok: () => cnt("antenna") >= 1,
+    },
+    {
+      t: "Find the Source",
+      x: "The signal is getting stronger. Keep exploring to find where it comes from.",
+      d: "The answer: an old Apollo experiment still sending data! Real Apollo instruments kept working for years after the astronauts left.",
+      goal: "Scan 4 discoveries in total.",
+      ok: () => S.disc.length >= 4,
+    },
+  ],
+};
+if (S.mission && MSETS[S.mission]) CHAPTERS = MSETS[S.mission];
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("[data-mis]");
+  if (!b || b.disabled) return;
+  const id = b.dataset.mis;
+  if (id === (S.mission || "hopper") && !R.ended) return;
+  if (S.ch > 0 && !R.ended && !confirm("Start this mission now? Your current mission will end."))
+    return;
+  S.mission = id;
+  restartMission();
 });

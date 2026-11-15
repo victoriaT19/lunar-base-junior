@@ -205,7 +205,7 @@ const GEAR = [
 ];
 const FOODMOOD = { food2: 2, food3: 3, food4: 3, personal: 5, hyg2: 2, cupola: 4, cabins: 3 };
 
-const CHAPTERS = [
+let CHAPTERS = [
   {
     t: "Arrival",
     x: 'Hopper Base hums quietly around you, but it is still a mess of boxes. "Welcome home," says KAI, your helper robot. "First, let us make this place comfortable: open Build and place a dining table and one decoration. Then eat, sleep and say hi to me. After that, Mission Control will send your mission."',
