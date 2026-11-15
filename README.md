@@ -8,9 +8,19 @@ Create your own astronaut, pack the ship on Earth, fly to the Moon, build a base
 
 ## The three phases
 
-1. **Pack the ship (Earth).** Choose the modules and supplies for your mission. Live graphs show mission time, life support, protective shield and resilience. More items make the ship heavier, so the trip takes longer and you have less time on the Moon.
-2. **Build the base (Moon).** Build Hopper Base block by block and with ready-made modules: bunk, garden, shielding walls and more. A bigger base costs energy and mission time. Take care of your astronaut (food, sleep and mood) and play the power grid, greenhouse, storm shield and dark crater rover missions.
-3. **Explore the surface.** Leave through the airlock to collect samples. Life support, shield and energy drop every second, so you must get back to the base in time.
+1. **Pack the ship (Earth).** Choose the modules and supplies for your mission. Live graphs show mission time, life support, protective shield and resilience. More items make the ship heavier, so the trip takes longer and you have less time on the Moon. The airlock is always included.
+2. **Build the base (Moon).** First make the base comfortable (a dining table and one decoration). Then keep four resources alive: **oxygen, power, food and hull**. Every block makes the base use more power and mission time. Play the power grid, storm shield and dark crater missions, and grow tomatoes in the greenhouse step by step: plant, water, then turn on the red and blue LED light, but not for too long or the plant burns and the base loses power.
+3. **Explore the surface.** Leave through the airlock to collect samples. Oxygen, shield and energy drop every second, so you must get back to the base in time.
+
+## KAI, the helper robot
+
+KAI can finish a task for you or show you the way to the next discovery on an expedition. The price: it uses **half of your oxygen**. Every shortcut has a cost.
+
+## How a mission ends
+
+- Oxygen runs out, the hull collapses, food runs out or the radiation dose hits 250 mSv: the mission is lost.
+- Time runs out before the main mission is finished: the astronaut comes home, but the mission failed.
+- Main mission finished and back home in time: the mission is complete. Every task gives points, and points turn into 1 to 5 stars. Stars unlock the next missions (Moon debris cleanup, a new lunar greenhouse, a strange signal), shown locked on the mission board.
 
 ## Levels based on real missions
 
@@ -48,9 +58,14 @@ Values are simplified for education.
 ## How it works
 
 - Plain HTML, CSS and JavaScript with canvas 2D. No build step and no dependencies.
-- `index.html`: character creator, ship planning and the lunar base.
-- `expedition.html`: surface exploration.
-- `art/art.js`: the pixel art characters, accessories and icons.
+- `index.html` and `expedition.html`: the two pages (base and surface exploration).
+- `css/`: styles for each page.
+- `js/core.js`: levels, save data and settings. `js/data.js`: items, blocks, ship modules and story. `js/state.js`: shared game state, audio and helpers.
+- `js/character.js`: the astronaut sprite, colors, accessories and animation.
+- `js/hub.js`: the base, building and astronaut actions. `js/ui.js`: menus and the character creator.
+- `js/plan.js`: ship planning, mission clock and NASA space weather. `js/minigames.js`: the missions.
+- `js/mission.js`: oxygen, power, hull, endings, points, stars and the greenhouse. `js/main.js`: game loop, HUD and start up.
+- `js/expedition.js`: surface exploration. `art/art.js`: the pixel art characters and icons.
 - Progress is saved in the browser (localStorage).
 
 ## Use of AI
