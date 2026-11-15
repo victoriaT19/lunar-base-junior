@@ -1,25 +1,25 @@
 const RMC = 10,
   RMR = 8,
-  TW = 64,
+  TW = 56,
   TH = 32,
-  ROX = 456,
-  ROY = 162,
-  WALLH = 112;
+  ROX = 200,
+  ROY = 196,
+  WALLH = 96;
 const WALLI = new Set(["window", "poster", "brick", "polymer", "solar", "antenna"]);
 const STATIONS = {
   bunk: { tiles: ["0,1", "0,2"], stand: [1.3, 2.0], label: "BUNK" },
-  galley: { tiles: ["3,0", "4,0"], stand: [4.0, 1.3], label: "GALLEY" },
+  galley: { tiles: ["5,0", "6,0"], stand: [6.0, 1.3], label: "GALLEY" },
   console: { tiles: ["7,0", "8,0"], stand: [8.0, 1.3], label: "CONSOLE" },
 };
-const DOORSLOTS = ["L:5", "L:6"];
+const DOORSLOTS = ["R:2", "R:3"];
 const STAND = {
-  eat: [4.0, 1.3],
+  eat: [6.0, 1.3],
   sleep: [1.3, 2.0],
   missions: [8.0, 1.3],
   craft: [8.0, 1.3],
-  exp: [0.6, 6.0],
+  exp: [3.0, 0.7],
 };
-const STANDT = ["1,2", "4,1", "8,1", "0,6"];
+const STANDT = ["1,2", "6,1", "8,1", "2,0", "3,0"];
 const RESV2 = new Set([
   ...Object.values(STATIONS).flatMap((s) => s.tiles),
   ...DOORSLOTS,
@@ -40,13 +40,33 @@ if (!S.roomV) {
   S.blocks = {};
   S.roomV = 1;
 }
+if (S.roomV < 2) {
+  S.stash = S.stash || {};
+  Object.keys(S.blocks).forEach((k) => {
+    if (k.startsWith("L:") || DOORSLOTS.includes(k)) {
+      S.stash[S.blocks[k]] = (S.stash[S.blocks[k]] || 0) + 1;
+      delete S.blocks[k];
+    }
+  });
+  S.roomV = 2;
+}
+if (S.roomV < 3) {
+  S.stash = S.stash || {};
+  Object.keys(S.blocks).forEach((k) => {
+    if (DOORSLOTS.includes(k) || k === "5,0" || k === "6,0" || STANDT.includes(k)) {
+      S.stash[S.blocks[k]] = (S.stash[S.blocks[k]] || 0) + 1;
+      delete S.blocks[k];
+    }
+  });
+  S.roomV = 3;
+}
 R.cx = 3;
 R.cy = 4;
 R.tcx = 3;
 R.tcy = 4;
 
 function iso(c, r) {
-  return [ROX + ((c - r) * TW) / 2, ROY + ((c + r) * TH) / 2];
+  return [ROX + c * TW, ROY + r * TH];
 }
 function astroScreen() {
   return iso(R.cx, R.cy);
@@ -200,16 +220,10 @@ function drawSkyBg() {
   px(rx0 - 15, ry0 - 24, 8, 2, "#ffd166");
 }
 function wallFace(side, i, fn) {
-  const base = side === "R" ? iso(i, 0) : iso(0, i + 1);
-  const sl = side === "R" ? 0.5 : -0.5;
-  const Q = (x, y, w, h, col) => {
-    ctx.fillStyle = col;
-    const x0 = Math.round(x),
-      x1 = Math.round(x + w);
-    for (let cx = x0; cx < x1; cx++)
-      ctx.fillRect(Math.round(base[0] + cx), Math.round(base[1] + y + cx * sl), 1, Math.round(h));
-  };
-  fn(TW / 2, Q);
+  if (side !== "R") return;
+  const base = iso(i, 0);
+  const Q = (x, y, w, h, col) => px(base[0] + x, base[1] + y, w, h, col);
+  fn(TW, Q);
 }
 function drawWallItem(id, w, t, Q) {
   if (id === "window") {
@@ -260,105 +274,71 @@ function buildRoomBg() {
   c2.height = H;
   ctx = c2.getContext("2d");
   drawSkyBg();
-  const top = (p) => [p[0], p[1] - WALLH];
   const a = iso(0, 0),
     b = iso(RMC, 0),
     f = iso(0, RMR),
     e = iso(RMC, RMR);
-  const FD = 30;
-  const shOff = 40;
+  const SW = 14,
+    FD = 24,
+    RW = e[0] - f[0];
   poly(
     [
-      [f[0], f[1] + FD],
-      [e[0], e[1] + FD],
-      [b[0], b[1] + FD],
-      [b[0] + shOff, b[1] + FD + 8],
-      [e[0] + shOff, e[1] + FD + 8],
-      [f[0] + shOff, f[1] + FD + 8],
+      [f[0] - SW, f[1] + FD],
+      [e[0] + SW, e[1] + FD],
+      [e[0] + SW + 34, e[1] + FD + 12],
+      [f[0] - SW + 34, f[1] + FD + 12],
     ],
     "rgba(20,22,44,.42)",
   );
-  poly([f, e, [e[0], e[1] + FD], [f[0], f[1] + FD]], "#3c4370", OUTC);
-  poly([e, b, [b[0], b[1] + FD], [e[0], e[1] + FD]], "#4d5588", OUTC);
-  for (let i = 1; i < RMC; i++) {
-    const p2 = iso(i, RMR);
-    pxLine([p2[0], p2[1] + 1], [p2[0], p2[1] + FD - 1], "#2e3460");
-  }
-  for (let i = 1; i < RMR; i++) {
-    const p2 = iso(RMC, i);
-    pxLine([p2[0], p2[1] + 1], [p2[0], p2[1] + FD - 1], "#3a4170");
-  }
-  pxLine([f[0], f[1] + 10], [e[0], e[1] + 10], "#2e3460");
-  pxLine([e[0], e[1] + 10], [b[0], b[1] + 10], "#3a4170");
   [
-    [0.15, 0],
-    [0.5, 0],
-    [0.85, 0],
-  ].forEach(([u]) => {
-    const x = f[0] + (e[0] - f[0]) * u,
-      y = f[1] + (e[1] - f[1]) * u;
-    px(x - 3, y + 16, 6, 4, "#ffd166");
-    px(x - 2, y + 17, 4, 2, "#ff9f45");
-  });
-  [
-    [f[0] - 30, f[1] + 44, 7],
-    [f[0] + 60, f[1] + 92, 5],
-    [e[0] + 70, e[1] + 30, 6],
-    [b[0] + 30, b[1] + 70, 8],
-    [e[0] - 120, e[1] + 52, 4],
-    [b[0] - 40, b[1] + 120, 5],
+    [f[0] - 60, f[1] + 40, 7],
+    [f[0] + 120, f[1] + 70, 5],
+    [e[0] + 60, e[1] - 40, 6],
+    [e[0] + 40, e[1] + 56, 8],
+    [f[0] + 380, f[1] + 76, 4],
+    [f[0] - 40, f[1] - 120, 5],
   ].forEach(([x, y, r]) => {
     pxEllipse(x, y + 2, r + 2, Math.max(2, r / 2), "rgba(20,22,44,.35)");
     pxEllipse(x, y, r, Math.max(2, Math.round(r * 0.6)), "#8a8eae");
     px(x - r + 2, y - 1, r, 1, "#a9adc8");
   });
+  px(f[0] - SW - 1, f[1] - 1, RW + SW * 2 + 2, FD + 2, OUTC);
+  px(f[0] - SW, f[1], RW + SW * 2, FD, "#3c4370");
+  px(f[0] - SW, f[1] + 8, RW + SW * 2, 1, "#2e3460");
+  for (let i = 0; i <= RMC; i++) px(f[0] + i * TW, f[1] + 1, 1, FD - 2, "#2e3460");
+  [0.2, 0.5, 0.8].forEach((u) => {
+    px(f[0] + RW * u - 3, f[1] + 13, 6, 4, "#ffd166");
+    px(f[0] + RW * u - 2, f[1] + 14, 4, 2, "#ff9f45");
+  });
   for (let r = 0; r < RMR; r++)
     for (let c = 0; c < RMC; c++) {
-      const col = (c + r) % 2 ? "#585e8c" : "#636a9a";
-      poly([iso(c, r), iso(c + 1, r), iso(c + 1, r + 1), iso(c, r + 1)], col);
-      pxLine(iso(c, r), iso(c + 1, r), "#4a5080");
-      pxLine(iso(c, r), iso(c, r + 1), "#6f76a8");
+      const p = iso(c, r);
+      px(p[0], p[1], TW, TH, (c + r) % 2 ? "#585e8c" : "#636a9a");
+      px(p[0], p[1], TW, 1, "#4a5080");
+      px(p[0], p[1], 1, TH, "#4a5080");
+      px(p[0] + 2, p[1] + 2, TW - 4, 1, "#6f76a8");
     }
-  const LW = 16;
-  poly([f, e, [e[0], e[1] - LW], [f[0], f[1] - LW]], "#5d6496", OUTC);
-  poly([e, b, [b[0], b[1] - LW], [e[0], e[1] - LW]], "#6b72a8", OUTC);
-  poly(
-    [
-      [f[0], f[1] - LW],
-      [e[0], e[1] - LW],
-      [e[0] - 6, e[1] - LW - 3],
-      [f[0] - 6, f[1] - LW - 3],
-    ],
-    "#8a90c8",
-    OUTC,
-  );
-  poly(
-    [
-      [e[0], e[1] - LW],
-      [b[0], b[1] - LW],
-      [b[0] - 6, b[1] - LW - 3],
-      [e[0] - 6, e[1] - LW - 3],
-    ],
-    "#9aa0d8",
-    OUTC,
-  );
-  poly([f, a, top(a), top(f)], "#565d8e", OUTC);
-  poly([a, b, top(b), top(a)], "#666da2", OUTC);
-  poly([top(f), top(a), [a[0], a[1] - WALLH - 10], [f[0], f[1] - WALLH - 10]], "#3a4170", OUTC);
-  poly([top(a), top(b), [b[0], b[1] - WALLH - 10], [a[0], a[1] - WALLH - 10]], "#454d82", OUTC);
+  px(a[0] - SW - 1, a[1] - WALLH - 11, RW + SW * 2 + 2, WALLH + 12, OUTC);
+  px(a[0], a[1] - WALLH, RW, WALLH, "#666da2");
+  px(a[0] - SW, a[1] - WALLH - 10, RW + SW * 2, 10, "#454d82");
+  px(a[0] - SW, a[1] - WALLH - 10, RW + SW * 2, 2, "#5a62a0");
+  px(a[0], a[1] - 12, RW, 12, "#565d92");
+  px(a[0], a[1] - 12, RW, 1, "#7a80b8");
+  px(a[0], a[1] - 2, RW, 2, "#3a4170");
+  px(f[0] - SW - 1, a[1] - WALLH - 1, SW + 1, f[1] - a[1] + WALLH + 1, OUTC);
+  px(f[0] - SW, a[1] - WALLH, SW, f[1] - a[1] + WALLH, "#4a5180");
+  px(f[0] - 3, a[1] - WALLH, 3, f[1] - a[1] + WALLH, "#5d6496");
+  px(e[0], a[1] - WALLH - 1, SW + 1, f[1] - a[1] + WALLH + 1, OUTC);
+  px(e[0], a[1] - WALLH, SW, f[1] - a[1] + WALLH, "#4a5180");
+  px(e[0], a[1] - WALLH, 3, f[1] - a[1] + WALLH, "#5d6496");
+  px(f[0] - SW, f[1] - 6, RW + SW * 2, 6, "#8a90c8");
+  px(f[0] - SW, f[1] - 6, RW + SW * 2, 1, "#b4b9e6");
   for (let i = 0; i < RMC; i++)
     wallFace("R", i, (w, Q) => {
-      Q(w - 1, -WALLH, 1, WALLH, "#565d92");
-      Q(2, -WALLH + 6, 2, 2, "#8a90c8");
-      Q(w - 5, -WALLH + 6, 2, 2, "#8a90c8");
-      Q(0, -14, w, 2, "#565d92");
-      Q(w / 2 - 3, -WALLH + 16, 6, 2, i % 2 ? "#3fd8f5" : "#7bd88f");
-    });
-  for (let i = 0; i < RMR; i++)
-    wallFace("L", i, (w, Q) => {
-      Q(w - 1, -WALLH, 1, WALLH, "#4a5080");
-      Q(2, -WALLH + 6, 2, 2, "#7a80b8");
-      Q(0, -14, w, 2, "#4a5080");
+      Q(w - 1, -WALLH, 1, WALLH - 12, "#565d92");
+      Q(4, -WALLH + 6, 2, 2, "#8a90c8");
+      Q(w - 6, -WALLH + 6, 2, 2, "#8a90c8");
+      Q(w / 2 - 4, -WALLH + 16, 8, 2, i % 2 ? "#3fd8f5" : "#7bd88f");
     });
   ctx = save;
   ROOMBG = c2;
@@ -371,7 +351,7 @@ function drawRoomWalls(t) {
   }
   const op = R.door;
   const blink = R.leave > 0 ? "#ff5d73" : Math.sin(t / 300) > 0 ? "#7bd88f" : "#2d6b3f";
-  wallFace("L", 5, (w, Q) => {
+  wallFace("R", 3, (w, Q) => {
     Q(-w + 4, -94, w * 2 - 8, 94, OUTC);
     Q(-w + 6, -92, w * 2 - 12, 92, "#0a0f33");
     Q(-w + 6, -92 + op * 86, w * 2 - 12, 92 - op * 86, "#ff9f45");
@@ -433,42 +413,62 @@ function stationDraw(k, t) {
     isoBox(0.1, 1.1, 0.8, 1.8, 14, 6, "#ff9f45");
     isoBox(0.15, 1.15, 0.7, 0.4, 20, 4, "#f4f6ff");
   } else if (k === "galley") {
-    isoBox(3.05, 0.05, 1.9, 0.9, 0, 28, "#c9cee8");
-    const doorA = iso(3.3, 0.95),
-      doorB = iso(4.1, 0.95);
-    pxLine([doorA[0], doorA[1] - 4], [doorA[0], doorA[1] - 24], "#8f97bd");
-    pxLine([doorB[0], doorB[1] - 4], [doorB[0], doorB[1] - 24], "#8f97bd");
-    px(doorA[0] + 6, doorA[1] - 15, 4, 2, "#3a3f5a");
-    px(doorB[0] + 6, doorB[1] - 15, 4, 2, "#3a3f5a");
-    isoBox(3.08, 0.08, 1.84, 0.84, 28, 3, "#eef1ff");
-    isoBox(3.15, 0.12, 0.7, 0.62, 31, 18, "#3a3f5a");
-    const win = iso(3.5, 0.74);
-    px(win[0] - 9, win[1] - 44, 16, 9, "#1a1020");
-    px(win[0] - 8, win[1] - 43, 14, 7, Math.sin(t / 300) > 0 ? "#ff9f45" : "#ff7a2a");
-    px(win[0] - 5, win[1] - 40, 8, 2, "#ffd166");
-    px(win[0] + 9, win[1] - 41, 2, 2, "#7bd88f");
-    const tray = iso(4.15, 0.45);
-    px(tray[0] - 9, tray[1] - 34, 18, 6, "#1a1020");
-    px(tray[0] - 8, tray[1] - 33, 16, 4, "#d9dcef");
-    px(tray[0] - 7, tray[1] - 33, 4, 2, "#ff5d73");
-    px(tray[0] - 2, tray[1] - 33, 4, 2, "#ffd166");
-    px(tray[0] + 3, tray[1] - 33, 4, 2, "#7bd88f");
-    const vg = iso(4.65, 0.35);
-    px(vg[0] - 8, vg[1] - 52, 16, 2, "#1a1020");
-    px(vg[0] - 7, vg[1] - 51, 14, 1, Math.floor(t / 500) % 2 ? "#ff3d6e" : "#5a6bff");
-    px(vg[0] - 7, vg[1] - 50, 14, 16, "rgba(200,80,255,.15)");
-    px(vg[0] - 8, vg[1] - 50, 1, 18, "#8f97bd");
-    px(vg[0] + 7, vg[1] - 50, 1, 18, "#8f97bd");
-    px(vg[0] - 6, vg[1] - 36, 12, 5, "#1a1020");
-    px(vg[0] - 5, vg[1] - 35, 10, 3, "#c4622d");
+    const x0 = iso(5, 0)[0] + 3,
+      w = TW * 2 - 6,
+      by = Math.round(iso(0, 0.95)[1]);
+    px(x0 - 1, by - 27, w + 2, 28, OUTC);
+    px(x0, by - 26, w, 26, "#c9cee8");
+    const dw = Math.floor((w - 8) / 3);
+    for (let d = 0; d < 3; d++) {
+      const dx = x0 + 4 + d * dw;
+      px(dx, by - 22, dw - 3, 18, "#b4b9d6");
+      px(dx, by - 22, dw - 3, 1, "#e6e9f6");
+      px(dx + dw - 9, by - 14, 4, 2, "#3a3f5a");
+    }
+    const ty = by - 43;
+    px(x0 - 3, ty - 1, w + 6, 18, OUTC);
+    px(x0 - 2, ty, w + 4, 16, "#eef1ff");
+    px(x0 - 2, ty, w + 4, 2, "#ffffff");
+    px(x0 - 2, ty + 14, w + 4, 2, "#b4b9d6");
+    const mx = x0 + 6;
+    px(mx - 1, ty - 15, 36, 27, OUTC);
+    px(mx, ty - 14, 34, 5, "#5a6080");
+    px(mx, ty - 9, 34, 20, "#2a2f45");
+    px(mx + 3, ty - 6, 20, 13, OUTC);
+    px(mx + 4, ty - 5, 18, 11, Math.sin(t / 300) > 0 ? "#ff9f45" : "#ff8a30");
+    px(mx + 6, ty + 1, 14, 3, "#ffd166");
+    px(mx + 8, ty - 1, 4, 2, "#7bd88f");
+    px(mx + 26, ty - 5, 5, 2, "#7bd88f");
+    px(mx + 26, ty - 1, 5, 2, "#ff5d73");
+    px(mx + 26, ty + 3, 5, 2, "#ffd166");
+    const cx = x0 + w / 2 + 6;
+    px(cx - 11, ty + 3, 22, 8, OUTC);
+    px(cx - 10, ty + 4, 20, 6, "#d9dcef");
+    px(cx - 9, ty + 5, 5, 4, "#ff5d73");
+    px(cx - 3, ty + 5, 5, 4, "#ffd166");
+    px(cx + 3, ty + 5, 5, 4, "#7bd88f");
+    const vx = x0 + w - 28;
+    px(vx - 1, ty - 27, 26, 38, OUTC);
+    px(vx, ty - 26, 24, 36, "#1c2246");
+    for (let i = 0; i < 12; i++) px(vx + i * 2, ty - 26, 2, 3, i % 2 ? "#ff3d6e" : "#5a6bff");
+    px(
+      vx,
+      ty - 23,
+      24,
+      30,
+      Math.floor(t / 600) % 2 ? "rgba(255,80,160,.18)" : "rgba(120,100,255,.18)",
+    );
+    px(vx + 4, ty + 3, 16, 7, OUTC);
+    px(vx + 5, ty + 4, 14, 5, "#c4622d");
     [
-      [-4, -40, 4],
-      [1, -42, 5],
-      [-1, -46, 4],
-      [3, -38, 3],
+      [6, -4, 5],
+      [11, -8, 6],
+      [15, -3, 5],
+      [9, -13, 4],
     ].forEach(([dx, dy, sz]) => {
-      px(vg[0] + dx - 1, vg[1] + dy - 1, sz + 2, sz + 2, "#123a1a");
-      px(vg[0] + dx, vg[1] + dy, sz, sz, "#7be08a");
+      px(vx + dx - 1, ty + dy - 1, sz + 2, sz + 2, "#123a1a");
+      px(vx + dx, ty + dy, sz, sz, "#7be08a");
+      px(vx + dx, ty + dy, sz, 1, "#b6f5bf");
     });
   } else if (k === "console") {
     isoBox(7.05, 0.05, 1.9, 0.9, 0, 24, "#454d82");
@@ -564,14 +564,14 @@ function drawScene(t) {
   for (const k in S.blocks) {
     if (k.includes(":")) continue;
     const [c, r] = k.split(",").map(Number);
-    list.push({ d: c + r + 0.5, f: () => floorItemDraw(S.blocks[k], c, r, t) });
+    list.push({ d: r + 0.5 + c * 0.001, f: () => floorItemDraw(S.blocks[k], c, r, t) });
   }
   Object.keys(STATIONS).forEach((k) => {
     const s = STATIONS[k];
     const [c, r] = s.tiles[s.tiles.length - 1].split(",").map(Number);
-    list.push({ d: c + r + 0.4, f: () => stationDraw(k, t) });
+    list.push({ d: r + 0.4 + c * 0.001, f: () => stationDraw(k, t) });
   });
-  list.push({ d: R.cx + R.cy, f: () => drawAstro(t) });
+  list.push({ d: R.cy, f: () => drawAstro(t) });
   list.sort((a, b) => a.d - b.d).forEach((o) => o.f());
   drawKai(t);
   if (R.build && R.hover) drawHover(t);
@@ -692,28 +692,16 @@ function pickRoom(ev) {
   const rc = cv.getBoundingClientRect();
   const x = ((ev.clientX - rc.left) / rc.width) * W,
     y = ((ev.clientY - rc.top) / rc.height) * H;
-  const fx = (x - ROX) / (TW / 2),
-    fy = (y - ROY) / (TH / 2);
-  const c = (fx + fy) / 2,
-    r = (fy - fx) / 2;
+  const c = (x - ROX) / TW,
+    r = (y - ROY) / TH;
   if (c >= 0 && c < RMC && r >= 0 && r < RMR)
     return { k: Math.floor(c) + "," + Math.floor(r), c, r, x, y };
-  if (x >= ROX && x < ROX + (RMC * TW) / 2) {
-    const u = (x - ROX) / (TW / 2);
-    const by = ROY + (u * TH) / 2;
-    if (y <= by && y >= by - WALLH) return { k: "R:" + Math.floor(u), x, y };
-  }
-  if (x < ROX && x >= ROX - (RMR * TW) / 2) {
-    const u = (ROX - x) / (TW / 2);
-    const by = ROY + (u * TH) / 2;
-    if (y <= by && y >= by - WALLH) return { k: "L:" + Math.floor(u), x, y };
-  }
+  if (c >= 0 && c < RMC && y >= ROY - WALLH && y < ROY) return { k: "R:" + Math.floor(c), x, y };
   return { k: null, x, y };
 }
 function freeWallSlots() {
   const out = [];
   for (let i = 0; i < RMC; i++) out.push("R:" + i);
-  for (let i = 0; i < RMR; i++) out.push("L:" + i);
   return out.filter((k) => !S.blocks[k] && !RESV2.has(k) && k !== "R:7" && k !== "R:8");
 }
 function freeFloorNear(c, r) {
@@ -873,7 +861,7 @@ cv.addEventListener("pointerdown", (e) => {
     return;
   }
   if (!p.k) return;
-  if (p.k === "L:5" || p.k === "L:6") {
+  if (p.k === "R:2" || p.k === "R:3") {
     doAct("exp");
     return;
   }
@@ -1020,8 +1008,8 @@ function moveAstro(dt) {
   if ((kx || ky) && R.mode !== "wave" && R.leave <= 0) {
     R.act = null;
     R.path = [];
-    let dc = kx + ky,
-      dr = -kx + ky;
+    let dc = kx,
+      dr = ky;
     const n = Math.hypot(dc, dr) || 1;
     dc /= n;
     dr /= n;
@@ -1045,7 +1033,7 @@ function moveAstro(dt) {
       const sp = Math.min(dist, 2.6 * dt);
       R.cx += (dx / dist) * sp;
       R.cy += (dy / dist) * sp;
-      const sdx = dx - dy;
+      const sdx = dx;
       if (Math.abs(sdx) > 0.01) R.dir = sdx > 0 ? 1 : -1;
     }
     R.mode = "walk";
