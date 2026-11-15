@@ -19,7 +19,15 @@ const STAND = {
   craft: [8.0, 1.3],
   exp: [0.6, 6.0],
 };
-const RESV2 = new Set([...Object.values(STATIONS).flatMap((s) => s.tiles), ...DOORSLOTS]);
+const STANDT = ["1,2", "4,1", "8,1", "0,6"];
+const RESV2 = new Set([
+  ...Object.values(STATIONS).flatMap((s) => s.tiles),
+  ...DOORSLOTS,
+  ...STANDT,
+]);
+const STATT = new Set(Object.values(STATIONS).flatMap((s) => s.tiles));
+R.keys = {};
+R.path = [];
 const OUTC = "#1a1020";
 const RB = document.createElement("canvas");
 RB.width = W;
@@ -487,15 +495,6 @@ function drawLabels(t) {
     ctx.fillStyle = col || "#ffffff";
     ctx.fillText(txt, x, y);
   };
-  Object.keys(STATIONS).forEach((k) => {
-    const s = STATIONS[k];
-    const p = iso(s.stand[0], s.stand[1] + 0.6);
-    lab(s.label, p[0], p[1] + 12);
-  });
-  const g = iso(4.1, 0.5);
-  lab("🍲 " + S.rations, g[0], g[1] - 58, "#ffd166");
-  const d = iso(0, 6);
-  lab("AIRLOCK", d[0] - 8, d[1] - 108, "#ffd166");
   if (R.bub && R.bubT > 0 && R.mode !== "sleep") {
     ctx.font = PFn(7);
     const w = Math.ceil(ctx.measureText(R.bub).width) + 16;
@@ -662,6 +661,10 @@ function placeAt(hv) {
     toast("Occupied. Remove it first.", 1500);
     return;
   }
+  if (!wall && k === Math.floor(R.cx) + "," + Math.floor(R.cy)) {
+    toast("Your astronaut is standing there.", 1500);
+    return;
+  }
   if (!afford(b.cost)) {
     toast("Not enough: " + costIcons(b.cost), 2200);
     return;
@@ -711,28 +714,177 @@ cv.addEventListener("pointerdown", (e) => {
   else if (st === "console") doAct("missions");
   else if (R.mode !== "sleep" && R.mode !== "eat" && R.leave <= 0) {
     R.act = null;
-    R.tcx = clamp(p.c, 0.4, RMC - 0.4);
-    R.tcy = clamp(p.r, 0.4, RMR - 0.4);
+    goTo(clamp(p.c, 0.4, RMC - 0.4), clamp(p.r, 0.4, RMR - 0.4));
   }
 });
+function blockedTile(c, r) {
+  if (c < 0 || r < 0 || c >= RMC || r >= RMR) return true;
+  const k = c + "," + r;
+  return STATT.has(k) || !!S.blocks[k];
+}
+function freeAt(x, y) {
+  if (x < 0.25 || y < 0.25 || x > RMC - 0.25 || y > RMR - 0.25) return false;
+  const m = 0.22;
+  return [
+    [x - m, y - m],
+    [x + m, y - m],
+    [x - m, y + m],
+    [x + m, y + m],
+  ].every(([a, b]) => !blockedTile(Math.floor(a), Math.floor(b)));
+}
+function findPath(c0, r0, c1, r1) {
+  const key = (c, r) => c + "," + r;
+  const prev = {};
+  const q = [[c0, r0]];
+  prev[key(c0, r0)] = null;
+  const D = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+  ];
+  while (q.length) {
+    const [c, r] = q.shift();
+    if (c === c1 && r === r1) {
+      const out = [];
+      let k = key(c, r);
+      while (k) {
+        const [a, b] = k.split(",").map(Number);
+        out.unshift([a + 0.5, b + 0.5]);
+        k = prev[k];
+      }
+      return out;
+    }
+    for (const [dx, dy] of D) {
+      const nc = c + dx,
+        nr = r + dy;
+      if (prev[key(nc, nr)] !== undefined || blockedTile(nc, nr)) continue;
+      if (dx && dy && (blockedTile(c + dx, r) || blockedTile(c, r + dy))) continue;
+      prev[key(nc, nr)] = key(c, r);
+      q.push([nc, nr]);
+    }
+  }
+  return null;
+}
+function nearestFree(c, r) {
+  let best = null,
+    bd = 1e9;
+  for (let rr = 0; rr < RMR; rr++)
+    for (let cc = 0; cc < RMC; cc++) {
+      if (blockedTile(cc, rr)) continue;
+      const d = Math.hypot(cc - c, rr - r);
+      if (d < bd) {
+        bd = d;
+        best = [cc, rr];
+      }
+    }
+  return best;
+}
+function goTo(c, r) {
+  let tc = Math.floor(c),
+    tr = Math.floor(r);
+  let fx = c,
+    fy = r;
+  if (blockedTile(tc, tr)) {
+    const n = nearestFree(c, r);
+    if (!n) return;
+    [tc, tr] = n;
+    fx = tc + 0.5;
+    fy = tr + 0.5;
+  }
+  const p = findPath(Math.floor(R.cx), Math.floor(R.cy), tc, tr);
+  if (!p) {
+    R.path = [];
+    return;
+  }
+  R.path = p.slice(1);
+  if (R.path.length) R.path[R.path.length - 1] = [fx, fy];
+  else R.path = [[fx, fy]];
+  R.tcx = fx;
+  R.tcy = fy;
+}
+function tryMove(dx, dy) {
+  const nx = R.cx + dx,
+    ny = R.cy + dy;
+  if (freeAt(nx, ny)) {
+    R.cx = nx;
+    R.cy = ny;
+  } else if (freeAt(nx, R.cy)) R.cx = nx;
+  else if (freeAt(R.cx, ny)) R.cy = ny;
+}
+const MOVEK = {
+  w: "up",
+  arrowup: "up",
+  s: "down",
+  arrowdown: "down",
+  a: "left",
+  arrowleft: "left",
+  d: "right",
+  arrowright: "right",
+};
+function roomKeysOk(e) {
+  const tag = (e.target && e.target.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return false;
+  if (typeof MG !== "undefined" && MG) return false;
+  return !document.querySelector(".overlay.on");
+}
+window.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (!MOVEK[k] || !roomKeysOk(e)) return;
+  e.preventDefault();
+  R.keys[MOVEK[k]] = true;
+});
+window.addEventListener("keyup", (e) => {
+  const k = e.key.toLowerCase();
+  if (MOVEK[k]) R.keys[MOVEK[k]] = false;
+});
+window.addEventListener("blur", () => (R.keys = {}));
 function moveAstro(dt) {
   if (R.mode !== "walk" && R.mode !== "idle" && R.mode !== "wave") return;
-  const dx = R.tcx - R.cx,
-    dy = R.tcy - R.cy;
-  const dist = Math.hypot(dx, dy);
-  if (dist > 0.06 && R.mode !== "wave") {
-    const sp = Math.min(dist, 2.6 * dt);
-    R.cx += (dx / dist) * sp;
-    R.cy += (dy / dist) * sp;
-    const sdx = dx - dy;
-    if (Math.abs(sdx) > 0.01) R.dir = sdx > 0 ? 1 : -1;
+  const kx = (R.keys.right ? 1 : 0) - (R.keys.left ? 1 : 0),
+    ky = (R.keys.down ? 1 : 0) - (R.keys.up ? 1 : 0);
+  if ((kx || ky) && R.mode !== "wave" && R.leave <= 0) {
+    R.act = null;
+    R.path = [];
+    let dc = kx + ky,
+      dr = -kx + ky;
+    const n = Math.hypot(dc, dr) || 1;
+    dc /= n;
+    dr /= n;
+    tryMove(dc * 2.6 * dt, dr * 2.6 * dt);
+    if (kx) R.dir = kx > 0 ? 1 : -1;
     R.mode = "walk";
-  } else {
-    if (R.mode === "walk") R.mode = "idle";
-    if (R.act && R.mode === "idle") {
-      const a = R.act;
-      R.act = null;
-      arrive(a);
+    R.tcx = R.cx;
+    R.tcy = R.cy;
+    return;
+  }
+  if (R.path.length && R.mode !== "wave") {
+    const [tx, ty] = R.path[0];
+    const dx = tx - R.cx,
+      dy = ty - R.cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.08) {
+      R.cx = tx;
+      R.cy = ty;
+      R.path.shift();
+    } else {
+      const sp = Math.min(dist, 2.6 * dt);
+      R.cx += (dx / dist) * sp;
+      R.cy += (dy / dist) * sp;
+      const sdx = dx - dy;
+      if (Math.abs(sdx) > 0.01) R.dir = sdx > 0 ? 1 : -1;
     }
+    R.mode = "walk";
+    return;
+  }
+  if (R.mode === "walk") R.mode = "idle";
+  if (R.act && R.mode === "idle") {
+    const a = R.act;
+    R.act = null;
+    arrive(a);
   }
 }

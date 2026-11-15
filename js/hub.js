@@ -43,8 +43,7 @@ function doAct(a) {
   }
   if (R.act && R.build) toggleBuild();
   if (R.act) {
-    R.tcx = R.act.p[0];
-    R.tcy = R.act.p[1];
+    goTo(R.act.p[0], R.act.p[1]);
   }
 }
 function pet() {

@@ -827,7 +827,7 @@ function mgDraw(t) {
     mc.translate(Math.round(rnd(-3, 3) * MG.shake), Math.round(rnd(-3, 3) * MG.shake));
   Q(0, 0, 640, 420, "#0a0e2a");
   if (MG.kind === "plugs") drawPlugs(t);
-  if (MG.kind === "wires") {
+  else if (MG.kind === "wires") {
     for (let i = 0; i < 40; i++) Q((i * 97) % 640, (i * 53) % 420, 2, 2, "#1d2660");
     const { c, r, s, ox, oy } = GRID;
     Q(ox - 8, oy - 8, c * s + 16, r * s + 16, "#0b0f2a");

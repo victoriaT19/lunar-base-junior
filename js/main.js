@@ -209,7 +209,7 @@ function openA11y() {
         "Toggle mining (expedition)",
         "Click once to start the mining beam and again to stop, instead of holding.",
       ) +
-      `<div class="real">Keyboard: Tab and Shift+Tab move between buttons, Enter or Space activates, Esc closes menus. Shortcuts at the base: E eat, Z sleep, P pet, M missions, C craft, B build, S style, X expedition, W space weather, A accessibility. Important events are announced to screen readers. These settings are shared with the expedition and saved in this browser.</div>`,
+      `<div class="real">Keyboard: Tab and Shift+Tab move between buttons, Enter or Space activates, Esc closes menus. Move with WASD or the arrow keys, or click the floor. Shortcuts at the base: E eat, Z sleep, P say hi to KAI, M missions, C craft, B build, L look/style, X expedition, U space weather, H accessibility. Important events are announced to screen readers. These settings are shared with the expedition and saved in this browser.</div>`,
   );
   $("volr").oninput = (e) => {
     A.vol = +e.target.value;
@@ -252,10 +252,10 @@ window.addEventListener("keydown", (e) => {
     m: "missions",
     c: "craft",
     b: "build",
-    s: "style",
+    l: "style",
     x: "exp",
-    w: "wx",
-    a: "a11y",
+    u: "wx",
+    h: "a11y",
   };
   if (map[k]) {
     e.preventDefault();
