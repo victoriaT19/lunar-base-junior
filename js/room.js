@@ -265,50 +265,52 @@ function buildRoomBg() {
     b = iso(RMC, 0),
     f = iso(0, RMR),
     e = iso(RMC, RMR);
-  const cen = iso(RMC / 2, RMR / 2);
-  pxEllipse(cen[0] + 14, cen[1] + 62, 360, 120, "rgba(18,20,40,.35)");
-  pxEllipse(cen[0] + 10, cen[1] + 52, 320, 100, "rgba(18,20,40,.3)");
-  const FD = 26;
-  poly([f, e, [e[0], e[1] + FD], [f[0], f[1] + FD]], "#3b3f58", OUTC);
-  poly([e, b, [b[0], b[1] + FD], [e[0], e[1] + FD]], "#4a4e6a", OUTC);
-  pxLine([f[0], f[1] + 13], [e[0], e[1] + 13], "#2e3248");
-  pxLine([e[0], e[1] + 13], [b[0], b[1] + 13], "#3a3e56");
-  for (let i = 0; i <= RMC; i += 2) {
+  const FD = 30;
+  const shOff = 40;
+  poly(
+    [
+      [f[0], f[1] + FD],
+      [e[0], e[1] + FD],
+      [b[0], b[1] + FD],
+      [b[0] + shOff, b[1] + FD + 8],
+      [e[0] + shOff, e[1] + FD + 8],
+      [f[0] + shOff, f[1] + FD + 8],
+    ],
+    "rgba(20,22,44,.42)",
+  );
+  poly([f, e, [e[0], e[1] + FD], [f[0], f[1] + FD]], "#3c4370", OUTC);
+  poly([e, b, [b[0], b[1] + FD], [e[0], e[1] + FD]], "#4d5588", OUTC);
+  for (let i = 1; i < RMC; i++) {
     const p2 = iso(i, RMR);
-    px(p2[0] - 2, p2[1] + 4, 4, 18, "#2a2d42");
-    px(p2[0] - 1, p2[1] + 4, 1, 18, "#5a5e7a");
+    pxLine([p2[0], p2[1] + 1], [p2[0], p2[1] + FD - 1], "#2e3460");
   }
-  for (let i = 0; i <= RMR; i += 2) {
+  for (let i = 1; i < RMR; i++) {
     const p2 = iso(RMC, i);
-    px(p2[0] - 2, p2[1] + 4, 4, 18, "#2a2d42");
-    px(p2[0] - 1, p2[1] + 4, 1, 18, "#5a5e7a");
+    pxLine([p2[0], p2[1] + 1], [p2[0], p2[1] + FD - 1], "#3a4170");
   }
-  const mound = (a, bb, n) => {
-    for (let i = 0; i <= n; i++) {
-      const u = i / n;
-      const x = a[0] + (bb[0] - a[0]) * u,
-        y = a[1] + (bb[1] - a[1]) * u + FD;
-      const w = 10 + ((i * 37) % 9),
-        h = 4 + ((i * 53) % 5);
-      pxEllipse(x, y - 1, w + 1, h + 1, "#8a8eae");
-      pxEllipse(x, y + 1, w, h, "#6c7092");
-    }
-  };
-  mound(f, e, 22);
-  mound(e, b, 26);
-  const backL = iso(0, RMR),
-    backT = iso(0, 0),
-    backR = iso(RMC, 0);
+  pxLine([f[0], f[1] + 10], [e[0], e[1] + 10], "#2e3460");
+  pxLine([e[0], e[1] + 10], [b[0], b[1] + 10], "#3a4170");
   [
-    [backL, backT],
-    [backT, backR],
-  ].forEach(([a, bb]) => {
-    for (let i = 0; i <= 18; i++) {
-      const u = i / 18;
-      const x = a[0] + (bb[0] - a[0]) * u,
-        y = a[1] + (bb[1] - a[1]) * u - WALLH + 2;
-      px(x - 1, y, 3, 1, "#7d819c");
-    }
+    [0.15, 0],
+    [0.5, 0],
+    [0.85, 0],
+  ].forEach(([u]) => {
+    const x = f[0] + (e[0] - f[0]) * u,
+      y = f[1] + (e[1] - f[1]) * u;
+    px(x - 3, y + 16, 6, 4, "#ffd166");
+    px(x - 2, y + 17, 4, 2, "#ff9f45");
+  });
+  [
+    [f[0] - 30, f[1] + 44, 7],
+    [f[0] + 60, f[1] + 92, 5],
+    [e[0] + 70, e[1] + 30, 6],
+    [b[0] + 30, b[1] + 70, 8],
+    [e[0] - 120, e[1] + 52, 4],
+    [b[0] - 40, b[1] + 120, 5],
+  ].forEach(([x, y, r]) => {
+    pxEllipse(x, y + 2, r + 2, Math.max(2, r / 2), "rgba(20,22,44,.35)");
+    pxEllipse(x, y, r, Math.max(2, Math.round(r * 0.6)), "#8a8eae");
+    px(x - r + 2, y - 1, r, 1, "#a9adc8");
   });
   for (let r = 0; r < RMR; r++)
     for (let c = 0; c < RMC; c++) {
@@ -317,6 +319,29 @@ function buildRoomBg() {
       pxLine(iso(c, r), iso(c + 1, r), "#4a5080");
       pxLine(iso(c, r), iso(c, r + 1), "#6f76a8");
     }
+  const LW = 16;
+  poly([f, e, [e[0], e[1] - LW], [f[0], f[1] - LW]], "#5d6496", OUTC);
+  poly([e, b, [b[0], b[1] - LW], [e[0], e[1] - LW]], "#6b72a8", OUTC);
+  poly(
+    [
+      [f[0], f[1] - LW],
+      [e[0], e[1] - LW],
+      [e[0] - 6, e[1] - LW - 3],
+      [f[0] - 6, f[1] - LW - 3],
+    ],
+    "#8a90c8",
+    OUTC,
+  );
+  poly(
+    [
+      [e[0], e[1] - LW],
+      [b[0], b[1] - LW],
+      [b[0] - 6, b[1] - LW - 3],
+      [e[0] - 6, e[1] - LW - 3],
+    ],
+    "#9aa0d8",
+    OUTC,
+  );
   poly([f, a, top(a), top(f)], "#565d8e", OUTC);
   poly([a, b, top(b), top(a)], "#666da2", OUTC);
   poly([top(f), top(a), [a[0], a[1] - WALLH - 10], [f[0], f[1] - WALLH - 10]], "#3a4170", OUTC);
