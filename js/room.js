@@ -265,8 +265,51 @@ function buildRoomBg() {
     b = iso(RMC, 0),
     f = iso(0, RMR),
     e = iso(RMC, RMR);
-  poly([f, e, [e[0], e[1] + 12], [f[0], f[1] + 12]], "#2c3260", OUTC);
-  poly([e, b, [b[0], b[1] + 12], [e[0], e[1] + 12]], "#3a4170", OUTC);
+  const cen = iso(RMC / 2, RMR / 2);
+  pxEllipse(cen[0] + 14, cen[1] + 62, 360, 120, "rgba(18,20,40,.35)");
+  pxEllipse(cen[0] + 10, cen[1] + 52, 320, 100, "rgba(18,20,40,.3)");
+  const FD = 26;
+  poly([f, e, [e[0], e[1] + FD], [f[0], f[1] + FD]], "#3b3f58", OUTC);
+  poly([e, b, [b[0], b[1] + FD], [e[0], e[1] + FD]], "#4a4e6a", OUTC);
+  pxLine([f[0], f[1] + 13], [e[0], e[1] + 13], "#2e3248");
+  pxLine([e[0], e[1] + 13], [b[0], b[1] + 13], "#3a3e56");
+  for (let i = 0; i <= RMC; i += 2) {
+    const p2 = iso(i, RMR);
+    px(p2[0] - 2, p2[1] + 4, 4, 18, "#2a2d42");
+    px(p2[0] - 1, p2[1] + 4, 1, 18, "#5a5e7a");
+  }
+  for (let i = 0; i <= RMR; i += 2) {
+    const p2 = iso(RMC, i);
+    px(p2[0] - 2, p2[1] + 4, 4, 18, "#2a2d42");
+    px(p2[0] - 1, p2[1] + 4, 1, 18, "#5a5e7a");
+  }
+  const mound = (a, bb, n) => {
+    for (let i = 0; i <= n; i++) {
+      const u = i / n;
+      const x = a[0] + (bb[0] - a[0]) * u,
+        y = a[1] + (bb[1] - a[1]) * u + FD;
+      const w = 10 + ((i * 37) % 9),
+        h = 4 + ((i * 53) % 5);
+      pxEllipse(x, y - 1, w + 1, h + 1, "#8a8eae");
+      pxEllipse(x, y + 1, w, h, "#6c7092");
+    }
+  };
+  mound(f, e, 22);
+  mound(e, b, 26);
+  const backL = iso(0, RMR),
+    backT = iso(0, 0),
+    backR = iso(RMC, 0);
+  [
+    [backL, backT],
+    [backT, backR],
+  ].forEach(([a, bb]) => {
+    for (let i = 0; i <= 18; i++) {
+      const u = i / 18;
+      const x = a[0] + (bb[0] - a[0]) * u,
+        y = a[1] + (bb[1] - a[1]) * u - WALLH + 2;
+      px(x - 1, y, 3, 1, "#7d819c");
+    }
+  });
   for (let r = 0; r < RMR; r++)
     for (let c = 0; c < RMC; c++) {
       const col = (c + r) % 2 ? "#585e8c" : "#636a9a";
@@ -365,9 +408,43 @@ function stationDraw(k, t) {
     isoBox(0.1, 1.1, 0.8, 1.8, 14, 6, "#ff9f45");
     isoBox(0.15, 1.15, 0.7, 0.4, 20, 4, "#f4f6ff");
   } else if (k === "galley") {
-    isoBox(3.05, 0.05, 1.9, 0.9, 0, 30, "#c9cee8");
-    isoBox(3.15, 0.1, 0.6, 0.8, 30, 22, "#eef1ff");
-    isoBox(4.2, 0.2, 0.5, 0.5, 30, 6, "#4a5070");
+    isoBox(3.05, 0.05, 1.9, 0.9, 0, 28, "#c9cee8");
+    const doorA = iso(3.3, 0.95),
+      doorB = iso(4.1, 0.95);
+    pxLine([doorA[0], doorA[1] - 4], [doorA[0], doorA[1] - 24], "#8f97bd");
+    pxLine([doorB[0], doorB[1] - 4], [doorB[0], doorB[1] - 24], "#8f97bd");
+    px(doorA[0] + 6, doorA[1] - 15, 4, 2, "#3a3f5a");
+    px(doorB[0] + 6, doorB[1] - 15, 4, 2, "#3a3f5a");
+    isoBox(3.08, 0.08, 1.84, 0.84, 28, 3, "#eef1ff");
+    isoBox(3.15, 0.12, 0.7, 0.62, 31, 18, "#3a3f5a");
+    const win = iso(3.5, 0.74);
+    px(win[0] - 9, win[1] - 44, 16, 9, "#1a1020");
+    px(win[0] - 8, win[1] - 43, 14, 7, Math.sin(t / 300) > 0 ? "#ff9f45" : "#ff7a2a");
+    px(win[0] - 5, win[1] - 40, 8, 2, "#ffd166");
+    px(win[0] + 9, win[1] - 41, 2, 2, "#7bd88f");
+    const tray = iso(4.15, 0.45);
+    px(tray[0] - 9, tray[1] - 34, 18, 6, "#1a1020");
+    px(tray[0] - 8, tray[1] - 33, 16, 4, "#d9dcef");
+    px(tray[0] - 7, tray[1] - 33, 4, 2, "#ff5d73");
+    px(tray[0] - 2, tray[1] - 33, 4, 2, "#ffd166");
+    px(tray[0] + 3, tray[1] - 33, 4, 2, "#7bd88f");
+    const vg = iso(4.65, 0.35);
+    px(vg[0] - 8, vg[1] - 52, 16, 2, "#1a1020");
+    px(vg[0] - 7, vg[1] - 51, 14, 1, Math.floor(t / 500) % 2 ? "#ff3d6e" : "#5a6bff");
+    px(vg[0] - 7, vg[1] - 50, 14, 16, "rgba(200,80,255,.15)");
+    px(vg[0] - 8, vg[1] - 50, 1, 18, "#8f97bd");
+    px(vg[0] + 7, vg[1] - 50, 1, 18, "#8f97bd");
+    px(vg[0] - 6, vg[1] - 36, 12, 5, "#1a1020");
+    px(vg[0] - 5, vg[1] - 35, 10, 3, "#c4622d");
+    [
+      [-4, -40, 4],
+      [1, -42, 5],
+      [-1, -46, 4],
+      [3, -38, 3],
+    ].forEach(([dx, dy, sz]) => {
+      px(vg[0] + dx - 1, vg[1] + dy - 1, sz + 2, sz + 2, "#123a1a");
+      px(vg[0] + dx, vg[1] + dy, sz, sz, "#7be08a");
+    });
   } else if (k === "console") {
     isoBox(7.05, 0.05, 1.9, 0.9, 0, 24, "#454d82");
     wallFace("R", 7, (w, Q) => {
