@@ -58,7 +58,7 @@ function pet() {
   for (let i = 0; i < 4; i++)
     R.hearts.push({
       x: R.x + rnd(-20, 20),
-      y: (R.sy || 400) - 110,
+      y: (R.sy || 400) - 70,
       vy: -rnd(30, 60),
       l: 1.2,
       e: ["❤️", "💛", "✨"][i % 3],

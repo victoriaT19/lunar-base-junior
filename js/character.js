@@ -151,74 +151,158 @@ function drawAcc(g, n, k, ex, ey, d) {
     });
   }
 }
+function halfCanvas(L) {
+  const full = charCanvas(L);
+  if (!full) return null;
+  if (full.half) return full.half;
+  const w = Math.ceil(full.width / 2),
+    h = Math.ceil(full.height / 2);
+  const src = full.getContext("2d").getImageData(0, 0, full.width, full.height).data;
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const og = out.getContext("2d");
+  const im = og.createImageData(w, h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const cols = [];
+      for (let dy = 0; dy < 2; dy++)
+        for (let dx = 0; dx < 2; dx++) {
+          const sx = x * 2 + dx,
+            sy = y * 2 + dy;
+          if (sx >= full.width || sy >= full.height) continue;
+          const p = (sy * full.width + sx) * 4;
+          if (src[p + 3] > 0) cols.push([src[p], src[p + 1], src[p + 2]]);
+        }
+      if (cols.length < 2) continue;
+      const cnt = {};
+      let best = null,
+        bn = 0;
+      cols.forEach((c) => {
+        const k = c.join(",");
+        cnt[k] = (cnt[k] || 0) + 1;
+        const lum = c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11;
+        const sc = cnt[k] * 1000 - lum;
+        if (sc > bn || !best) {
+          bn = sc;
+          best = c;
+        }
+      });
+      const dark = cols.filter((c) => c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11 < 45);
+      const pick = dark.length >= 2 ? dark[0] : best;
+      const q = (y * w + x) * 4;
+      im.data[q] = pick[0];
+      im.data[q + 1] = pick[1];
+      im.data[q + 2] = pick[2];
+      im.data[q + 3] = 255;
+    }
+  og.putImageData(im, 0, 0);
+  out.skin = full.skin;
+  full.half = out;
+  return out;
+}
+function spriteOf(L, half) {
+  const m = ART[charOf(L)];
+  const cv2 = half ? halfCanvas(L) : charCanvas(L);
+  if (!cv2) return null;
+  const f = half ? 0.5 : 1;
+  return { cv: cv2, h: m.h * f, d: m.d * f, ex: m.ex * f, ey: m.ey * f, mx: CMX * f, mt: CMT * f };
+}
 function drawMira(c, x, y, sc, o) {
-  const cv2 = charCanvas(S);
-  if (!cv2) return;
-  const meta = ART[charOf(S)];
+  const sp = spriteOf(S, !!o.half);
+  if (!sp) return;
+  const cv2 = sp.cv;
   const k = o.k || 2;
   const tr = c.getTransform();
   const a = Math.hypot(tr.a, tr.b) || 1;
-  const s2 = Math.max(1, Math.round(((76 * k) / meta.h) * a)) / a;
+  const s2 = Math.max(1, Math.round(((76 * k) / sp.h) * a)) / a;
   const t = o.still ? 0 : R.t;
   const walking = o.mode === "walk",
     asleep = o.mode === "sleep";
-  const W = cv2.width,
-    H = cv2.height;
-  const hip = Math.round(CMT + meta.h * 0.8);
+  const W2 = cv2.width,
+    H2 = cv2.height;
+  const hip = Math.round(sp.mt + sp.h * 0.8);
   const fr = Math.floor(t * 8) % 4;
+  const st = o.half ? 1 : 2;
   let up = 0,
     lL = 0,
     lR = 0;
   if (walking) {
-    lL = fr === 0 ? -2 : 0;
-    lR = fr === 2 ? -2 : 0;
+    lL = fr === 0 ? -st : 0;
+    lR = fr === 2 ? -st : 0;
     up = fr % 2 === 0 ? -1 : 0;
   } else if (!asleep && !o.still && !A.rm) up = Math.floor(t * 1.4) % 2 ? -1 : 0;
   c.save();
   c.imageSmoothingEnabled = false;
   c.translate(Math.round(x * a) / a, Math.round(y * a) / a);
   c.scale((o.dir || 1) * s2, s2);
-  const ox = -Math.round(W / 2);
+  const ox = -Math.round(W2 / 2);
   if (!asleep) {
-    c.fillStyle = "rgba(0,0,0,.28)";
-    c.fillRect(ox + Math.round(W * 0.22), -2, Math.round(W * 0.56), 3);
+    c.fillStyle = "rgba(0,0,0,.3)";
+    c.fillRect(ox + Math.round(W2 * 0.22), -2, Math.round(W2 * 0.56), o.half ? 2 : 3);
   }
-  const hw = Math.round(W / 2);
+  const hw = Math.round(W2 / 2);
+  const sh = walking ? 1 : 0;
   c.drawImage(
     cv2,
     0,
     hip,
     hw,
-    H - hip,
-    ox + (walking ? (fr === 0 ? 1 : fr === 2 ? -1 : 0) : 0),
-    -H + hip + lL,
+    H2 - hip,
+    ox + (fr === 0 ? sh : fr === 2 ? -sh : 0),
+    -H2 + hip + lL,
     hw,
-    H - hip,
+    H2 - hip,
   );
   c.drawImage(
     cv2,
     hw,
     hip,
-    W - hw,
-    H - hip,
-    ox + hw + (walking ? (fr === 2 ? 1 : fr === 0 ? -1 : 0) : 0),
-    -H + hip + lR,
-    W - hw,
-    H - hip,
+    W2 - hw,
+    H2 - hip,
+    ox + hw + (fr === 2 ? sh : fr === 0 ? -sh : 0),
+    -H2 + hip + lR,
+    W2 - hw,
+    H2 - hip,
   );
-  c.drawImage(cv2, 0, 0, W, hip, ox, -H + up, W, hip);
+  c.drawImage(cv2, 0, 0, W2, hip, ox, -H2 + up, W2, hip);
   const blink = asleep || (!o.still && t % 3.7 > 3.56);
   if (blink && cv2.skin) {
-    const d = meta.d,
-      ey = meta.ey + CMT - H + up;
-    [meta.ex - d / 2, meta.ex + d / 2].forEach((cx) => {
-      const x0 = Math.round(cx + CMX + ox - d * 0.22),
-        w = Math.round(d * 0.44);
+    const d = sp.d,
+      ey = sp.ey + sp.mt - H2 + up;
+    [sp.ex - d / 2, sp.ex + d / 2].forEach((cx) => {
+      const x0 = Math.round(cx + sp.mx + ox - d * 0.22),
+        w = Math.max(2, Math.round(d * 0.44));
       c.fillStyle = cv2.skin;
-      c.fillRect(x0, Math.round(ey - d * 0.24), w, Math.round(d * 0.46));
+      c.fillRect(x0, Math.round(ey - d * 0.24), w, Math.max(2, Math.round(d * 0.46)));
       c.fillStyle = "#2a1a20";
-      c.fillRect(x0 + 1, Math.round(ey + d * 0.08), w - 2, 1);
+      c.fillRect(x0, Math.round(ey + d * 0.08), w, 1);
     });
   }
+  c.restore();
+}
+function drawSleepHead(c, x, y) {
+  const sp = spriteOf(S, true);
+  if (!sp) return;
+  const d = sp.d,
+    ex = sp.ex + sp.mx,
+    ey = sp.ey + sp.mt;
+  const sx = Math.max(0, Math.round(ex - d * 1.45)),
+    sy = Math.max(0, Math.round(ey - d * 1.9)),
+    sw = Math.round(d * 2.9),
+    shh = Math.round(d * 2.6);
+  c.save();
+  c.imageSmoothingEnabled = false;
+  c.drawImage(sp.cv, sx, sy, sw, shh, Math.round(x - sw / 2), Math.round(y - shh), sw, shh);
+  if (sp.cv.skin)
+    [ex - d / 2, ex + d / 2].forEach((cx) => {
+      const x0 = Math.round(x - sw / 2 + (cx - sx) - d * 0.22),
+        w = Math.max(2, Math.round(d * 0.44));
+      const yy = Math.round(y - shh + (ey - sy));
+      c.fillStyle = sp.cv.skin;
+      c.fillRect(x0, yy - Math.round(d * 0.24), w, Math.max(2, Math.round(d * 0.46)));
+      c.fillStyle = "#2a1a20";
+      c.fillRect(x0, yy + 1, w, 1);
+    });
   c.restore();
 }

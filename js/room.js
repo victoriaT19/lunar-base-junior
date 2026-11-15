@@ -139,19 +139,57 @@ function drawSkyBg() {
     px(ex + w - 6, ey + y, 6, 1, "rgba(0,0,30,.45)");
   }
   px(ex - 12, ey - 14, 6, 2, "rgba(255,255,255,.5)");
-  pxEllipse(ROX + 40, ROY + 318, 540, 160, "#5a5e7a");
-  pxEllipse(ROX + 40, ROY + 312, 530, 150, "#6f7390");
+  const hz = 286;
+  for (let x = 0; x < W; x += 2) {
+    const h = Math.round(
+      26 + Math.sin(x / 41) * 12 + Math.sin(x / 17 + 1) * 6 + ((x * 7919) % 13) / 3,
+    );
+    px(x, hz - h, 2, h + 4, "#2e3250");
+    px(x, hz - h, 2, 1, "#4a4f75");
+  }
+  for (let x = 0; x < W; x += 2) {
+    const h = Math.round(12 + Math.sin(x / 63 + 2) * 8 + Math.sin(x / 23) * 3);
+    px(x, hz + 14 - h, 2, h + 4, "#454a6c");
+    px(x, hz + 14 - h, 2, 1, "#6a6f94");
+  }
+  const bandsG = ["#5c6082", "#64688a", "#6c7092", "#74789a"];
+  bandsG.forEach((c, i) => px(0, hz + 16 + i * 60, W, 60, c));
+  px(0, hz + 16 + bandsG.length * 60, W, H, bandsG[bandsG.length - 1]);
+  for (let i = 1; i < bandsG.length; i++)
+    for (let x = 0; x < W; x += 2) px(x + (i % 2), hz + 16 + i * 60 - 1, 1, 1, bandsG[i]);
   [
-    [140, 470, 48, 14],
-    [800, 440, 56, 16],
-    [650, 505, 30, 9],
-    [300, 515, 24, 7],
+    [110, 350, 40, 11],
+    [820, 330, 52, 14],
+    [690, 500, 34, 9],
+    [250, 495, 28, 8],
+    [905, 470, 22, 6],
+    [60, 430, 18, 5],
   ].forEach(([x, y, rx, ry]) => {
-    pxEllipse(x, y - 2, rx + 2, ry + 1, "#8a8ea8");
-    pxEllipse(x, y, rx, ry, "#555a76");
+    pxEllipse(x, y - 2, rx + 3, ry + 2, "#8a8eae");
+    pxEllipse(x, y, rx, ry, "#4f5372");
+    pxEllipse(
+      x + Math.round(rx * 0.2),
+      y + 1,
+      Math.round(rx * 0.7),
+      Math.round(ry * 0.6),
+      "#454966",
+    );
   });
-  for (let i = 0; i < 60; i++)
-    px((i * 97) % W, 360 + ((i * 53) % 170), 2, 1, i % 2 ? "#7d819c" : "#5f6380");
+  for (let i = 0; i < 90; i++)
+    px((i * 97) % W, hz + 22 + ((i * 53) % 230), 2, 1, i % 3 ? "#8286a6" : "#50547a");
+  const rx0 = 840,
+    ry0 = 392;
+  px(rx0 - 20, ry0 - 12, 40, 12, OUTC);
+  px(rx0 - 19, ry0 - 11, 38, 10, "#e6e9f6");
+  px(rx0 + 4, ry0 - 10, 12, 5, "#3fa7ff");
+  px(rx0 - 19, ry0 - 3, 38, 2, "#ff9f45");
+  [-14, 10].forEach((dx) => {
+    px(rx0 + dx - 1, ry0 - 1, 10, 10, OUTC);
+    px(rx0 + dx, ry0, 8, 8, "#3a3f5a");
+    px(rx0 + dx + 3, ry0 + 3, 2, 2, "#8f97bd");
+  });
+  px(rx0 - 12, ry0 - 22, 2, 10, "#8f97bd");
+  px(rx0 - 15, ry0 - 24, 8, 2, "#ffd166");
 }
 function wallFace(side, i, fn) {
   const base = side === "R" ? iso(i, 0) : iso(0, i + 1);
@@ -344,18 +382,31 @@ function drawAstro(t) {
   R.x = sx;
   R.sy = sy;
   if (R.mode === "sleep") {
-    const p = iso(0.5, 2.75);
-    ctx.save();
-    ctx.translate(Math.round(p[0]), Math.round(p[1] - 22));
-    ctx.rotate(Math.atan2(-TH / 2, TW / 2) + Math.PI / 2);
-    drawMira(ctx, 0, 0, 0.8, { mode: "sleep", dir: 1, k: 0.95 });
-    ctx.restore();
-    isoBox(0.12, 1.9, 0.76, 0.95, 20, 5, "#4cc9f0");
+    const p = iso(0.5, 1.45);
+    drawSleepHead(ctx, p[0], p[1] - 20);
+    isoBox(0.12, 1.6, 0.76, 1.3, 20, 5, "#4cc9f0");
+    const q = iso(0.5, 1.2);
+    const zt = Math.floor(t / 400) % 3;
+    for (let i = 0; i <= zt; i++) {
+      const zx = Math.round(q[0] + 14 + i * 10),
+        zy = Math.round(q[1] - 60 - i * 12);
+      px(zx, zy, 6, 1, "#ffffff");
+      px(zx + 4, zy + 1, 1, 1, "#ffffff");
+      px(zx + 3, zy + 2, 1, 1, "#ffffff");
+      px(zx + 2, zy + 3, 1, 1, "#ffffff");
+      px(zx + 1, zy + 4, 1, 1, "#ffffff");
+      px(zx, zy + 5, 6, 1, "#ffffff");
+    }
     return;
   }
   const fade = R.leave > 0 ? Math.max(0, R.leave / 1.4) : 1;
   ctx.globalAlpha = fade;
-  drawMira(ctx, Math.round(sx), Math.round(sy + 4), 0.95, { mode: R.mode, dir: R.dir, k: 1.35 });
+  drawMira(ctx, Math.round(sx), Math.round(sy + 4), 0.95, {
+    mode: R.mode,
+    dir: R.dir,
+    k: 0.75,
+    half: true,
+  });
   ctx.globalAlpha = 1;
 }
 const KAIM = [
@@ -369,7 +420,7 @@ const KAIM = [
 ];
 function drawKai(t) {
   const tx = R.x - R.dir * 40,
-    ty = R.sy - 128 + Math.sin(t / 380) * 6;
+    ty = R.sy - 82 + Math.sin(t / 380) * 6;
   R.px += (tx - R.px) * 0.05;
   R.py += (ty - R.py) * 0.05;
   const x = Math.round(R.px),
@@ -449,7 +500,7 @@ function drawLabels(t) {
     ctx.font = PFn(7);
     const w = Math.ceil(ctx.measureText(R.bub).width) + 16;
     const bxp = Math.round(clamp(R.x - w / 2, 10, W - w - 10)),
-      byp = Math.round(R.sy - 172);
+      byp = Math.round(R.sy - 108);
     ctx.fillStyle = OUTC;
     ctx.fillRect(bxp - 2, byp - 2, w + 4, 26);
     ctx.fillStyle = "#ffffff";
@@ -644,7 +695,7 @@ cv.addEventListener("pointerdown", (e) => {
     placeAt(p);
     return;
   }
-  if (Math.abs(p.x - R.x) < 26 && p.y > R.sy - 110 && p.y < R.sy + 6) {
+  if (Math.abs(p.x - R.x) < 18 && p.y > R.sy - 64 && p.y < R.sy + 6) {
     doAct("pet");
     return;
   }

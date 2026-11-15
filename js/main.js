@@ -334,3 +334,4 @@ applyLevel();
 loadDonki();
 loadWx();
 loadTech();
+requestAnimationFrame(loop);
