@@ -353,6 +353,11 @@ body.building #banners {
   padding: 4px 8px;
   font-size: 0.9em;
 }
+.inv .iw {
+  display: block;
+  font-size: 0.8em;
+  color: var(--mut);
+}
 .sw {
   display: inline-block;
   width: 28px;
