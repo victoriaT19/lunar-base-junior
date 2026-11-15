@@ -647,9 +647,27 @@ function drawHub(t) {
   ctx = main;
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, W, H);
+  let ts = 1,
+    ty = 0;
+  const pal = $("pal");
+  if (R.build && pal && pal.classList.contains("on")) {
+    const st = cv.getBoundingClientRect();
+    const pb = ((pal.getBoundingClientRect().bottom - st.top) / st.height) * H + 6;
+    const bt = $("bar") ? (($("bar").getBoundingClientRect().top - st.top) / st.height) * H - 4 : H;
+    ts = Math.min(1, (bt - pb) / (ROY + ((RMC + RMR) * TH) / 2 - (ROY - WALLH) + 8));
+    ty = pb - (ROY - WALLH) * ts;
+  }
+  RV.s += (ts - RV.s) * 0.2;
+  RV.y += (ty - RV.y) * 0.2;
+  RV.x = (W - W * RV.s) / 2;
+  ctx.save();
+  ctx.translate(RV.x, RV.y);
+  ctx.scale(RV.s, RV.s);
   ctx.drawImage(RB, 0, 0, W, H);
   drawLabels(t);
+  ctx.restore();
 }
+const RV = { s: 1, x: 0, y: 0 };
 function heldId() {
   if (R.tool === "move") return R.holding ? R.holding.id : null;
   if (R.tool.startsWith("stash:")) return R.tool.slice(6);
@@ -705,8 +723,8 @@ function drawHover(t) {
 }
 function pickRoom(ev) {
   const rc = cv.getBoundingClientRect();
-  const x = ((ev.clientX - rc.left) / rc.width) * W,
-    y = ((ev.clientY - rc.top) / rc.height) * H;
+  const x = (((ev.clientX - rc.left) / rc.width) * W - RV.x) / RV.s,
+    y = (((ev.clientY - rc.top) / rc.height) * H - RV.y) / RV.s;
   const fx = (x - ROX) / (TW / 2),
     fy = (y - ROY) / (TH / 2);
   const c = (fx + fy) / 2,
