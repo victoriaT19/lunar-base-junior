@@ -242,7 +242,7 @@ function openStyle() {
       `<div class="crx"><div class="cpanel"><div class="ctitle">★ ${tx("title")} ★</div><div class="csub">${tx("sub")}</div><canvas id="prev" class="prev" width="240" height="330" aria-label="${S.name}"></canvas>
 <div class="cbox"><div class="clbl">${tx("name")}</div><div class="nrow"><input type="text" id="nm" maxlength="12" value="${S.name}" placeholder="${tx("ph")}" aria-label="${tx("name")}"><button class="dice" data-dice="1" aria-label="Random name">🎲</button></div></div>` +
       (R.newStyle ? `<button id="bStart" class="go">🚀 ${tx("go")}</button>` : "") +
-      `</div><div class="cpanel">${row("skin", sw(SKINS, "skin"))}${row("hair", pix("char", CHARN[lang]))}${row("hairCol", sw(HAIRC, "hairCol"))}${row("eyes", sw(EYEC, "eyes"))}${row("acc", pix("acc", ACCS))}${row("suit", swc(SUITS, "suit"), "row:hairCol")}</div></div>
+      `</div><div class="cpanel">${row("skin", sw(SKINS, "skin"))}${row("hair", pix("char", CHARN[lang]))}${row("hairCol", sw(HAIRC, "hairCol"))}${row("eyes", sw(EYEC, "eyes"))}${row("acc", pix("acc", ACCS))}${row("suit", swc(SUITS, "suit"))}</div></div>
 <div class="cfoot"><div>🚀 ${tx("foot")}</div><div><span>Lunar Base Junior</span></div></div>`,
   );
   if (R.newStyle)
@@ -277,8 +277,87 @@ function renderIcons() {
     };
     let ok = true;
     if (key === "row") {
-      const im = AIMG.row[v];
-      ok = fit(im, 0, 0, im ? im.naturalWidth : 1, im ? im.naturalHeight : 1);
+      const M = {
+        skin: [
+          "..kkkkkk..",
+          ".kssssssk.",
+          "kssssssssk",
+          "ksspsspssk",
+          "kssssssssk",
+          "ksskkkkssk",
+          ".kssssssk.",
+          "..kkkkkk..",
+        ],
+        hair: [
+          "..hhhhhh..",
+          ".hhhhhhhh.",
+          "hhhhhhhhhh",
+          "hhsssssshh",
+          "hspsssspsh",
+          "hssssssssh",
+          ".sskkkkss.",
+          "..ssssss..",
+        ],
+        hairCol: [
+          "...hh.....",
+          "..hhhh....",
+          ".hhllhh...",
+          ".hhlhhhh..",
+          "hhhhhhhhh.",
+          "hhhhhhhhhh",
+          ".hhhhhhhhh",
+          "..hhhhhhh.",
+          "...hhhhh..",
+        ],
+        eyes: [
+          "..kkkkkk..",
+          ".kwwwwwwk.",
+          "kwwiiiiwwk",
+          "kwwippiwwk",
+          "kwwippiwwk",
+          "kwwiiiiwwk",
+          ".kwwwwwwk.",
+          "..kkkkkk..",
+        ],
+        acc: ["kkkk..kkkk", "kwlk..kwlk", "kllkkkkllk", "kllk..kllk", "kkkk..kkkk"],
+        suit: [
+          "..gggggg..",
+          ".gwwwwwwg.",
+          "gwwwwwwwwg",
+          "gwwbbbbwwg",
+          "gwwbybbwwg",
+          "gwwbbbbwwg",
+          "goooooooog",
+          "gwwwwwwwwg",
+          "gwwg..gwwg",
+          "ggg....ggg",
+        ],
+      }[v];
+      const C = {
+        k: "#1a1020",
+        s: S.skin >= 0 && SKINS[S.skin] ? SKINS[S.skin] : "#e0a678",
+        h: S.hairCol >= 0 && HAIRC[S.hairCol] ? HAIRC[S.hairCol] : "#6a4020",
+        l: "#ffffff55",
+        i: S.eyes >= 0 && EYEC[S.eyes] ? EYEC[S.eyes] : "#2a6fb0",
+        p: "#1a1020",
+        w: "#f4f6ff",
+        g: "#8f97bd",
+        b: "#2b6fd6",
+        y: "#ffd166",
+        o: S.suit || "#ff9f45",
+      };
+      if (M) {
+        const px = 4,
+          ox = (cv2.width - M[0].length * px) / 2,
+          oy = (cv2.height - M.length * px) / 2;
+        M.forEach((r, y) => {
+          for (let x = 0; x < r.length; x++)
+            if (r[x] !== ".") {
+              c2.fillStyle = C[r[x]];
+              c2.fillRect(ox + x * px, oy + y * px, px, px);
+            }
+        });
+      }
     } else if (key === "preset") {
       const im = AIMG.bust[v];
       ok = fit(im, 0, 0, im ? im.naturalWidth : 1, im ? im.naturalHeight : 1);
