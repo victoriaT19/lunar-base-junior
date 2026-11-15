@@ -209,7 +209,7 @@ function renderGarden() {
     `<div class="gbar"><span>${l}</span><div class="bt"><i style="width:${clamp(v, 0, 100)}%;background:${c}"></i></div></div>`;
   const step = (n, t, done) => `<li class="${done ? "ok" : ""}">${done ? "✅" : n + "."} ${t}</li>`;
   box.innerHTML =
-    helpBox("How this screen works", [
+    helpBox("💡 Tips", [
       "Follow the 4 steps in order. Each action costs a little oxygen and power.",
       "💧 Water goes down over time: water again before the bar empties or the plant dries out.",
       "💡 The LED makes the plant grow but uses power. The light bar shows how long it has been on: turn it off before it fills, or the plant burns.",

@@ -18,7 +18,7 @@ function invHtml() {
     .join("")}<span>🍲 ${S.rations}</span><span>◈ ${S.units}</span></div>`;
 }
 function helpBox(title, lines) {
-  return `<details class="help"><summary>❓ ${title}</summary><ul>${lines.map((l) => `<li>${l.replace(/<[^>]+>/g, "")}</li>`).join("")}</ul></details>`;
+  return `<details class="help"><summary>${title}</summary><ul>${lines.map((l) => `<li>${l.replace(/<[^>]+>/g, "")}</li>`).join("")}</ul></details>`;
 }
 const HELP_UNITS =
   "◈ <b>Units</b> are the base money. You earn them by finishing tasks, chapters and expeditions, and you spend them on supplies (Workshop) and some decorations (Build).";
@@ -34,7 +34,7 @@ function openMissions() {
   const st = R.storm;
   openModal(
     head("🎯 Mission board") +
-      helpBox("How this screen works", [
+      helpBox("💡 Tips", [
         "These are <b>optional tasks</b>. They help you earn units and points, fix problems and keep the base alive. The <b>main goal</b> is always shown at the top right of the screen.",
         "🏅 green tag: what you <b>win</b>. 🫧⚡ red tag: the <b>oxygen and power it costs</b> to start. ⏱️: how long you have.",
         "<b>URGENT</b> means something is broken right now: fix it soon or the hull gets damaged.",
@@ -53,7 +53,7 @@ function openMissions() {
 function openCraft() {
   openModal(
     head("🔧 Workshop") +
-      helpBox("How this screen works", [
+      helpBox("💡 Tips", [
         "<b>Craft</b> turns raw materials (regolith, ilmenite, ice, carbon) into useful parts: metal plates, polymer plates, solar cells, oxygen and meals.",
         "Get raw materials on <b>expeditions</b> or in the <b>dark crater rover</b>. The bar at the top shows what you have now.",
         "The <b>Supply store</b> sells things for units. " + HELP_UNITS,
