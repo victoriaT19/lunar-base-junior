@@ -3,7 +3,7 @@ const RMC = 10,
   TW = 56,
   TH = 32,
   ROX = 200,
-  ROY = 196,
+  ROY = 190,
   WALLH = 96;
 const WALLI = new Set(["window", "poster", "brick", "polymer", "solar", "antenna"]);
 const STATIONS = {
@@ -273,72 +273,85 @@ function buildRoomBg() {
   c2.width = W;
   c2.height = H;
   ctx = c2.getContext("2d");
-  drawSkyBg();
   const a = iso(0, 0),
     b = iso(RMC, 0),
     f = iso(0, RMR),
     e = iso(RMC, RMR);
-  const SW = 14,
-    FD = 24,
-    RW = e[0] - f[0];
-  poly(
-    [
-      [f[0] - SW, f[1] + FD],
-      [e[0] + SW, e[1] + FD],
-      [e[0] + SW + 34, e[1] + FD + 12],
-      [f[0] - SW + 34, f[1] + FD + 12],
-    ],
-    "rgba(20,22,44,.42)",
-  );
-  [
-    [f[0] - 60, f[1] + 40, 7],
-    [f[0] + 120, f[1] + 70, 5],
-    [e[0] + 60, e[1] - 40, 6],
-    [e[0] + 40, e[1] + 56, 8],
-    [f[0] + 380, f[1] + 76, 4],
-    [f[0] - 40, f[1] - 120, 5],
-  ].forEach(([x, y, r]) => {
-    pxEllipse(x, y + 2, r + 2, Math.max(2, r / 2), "rgba(20,22,44,.35)");
-    pxEllipse(x, y, r, Math.max(2, Math.round(r * 0.6)), "#8a8eae");
-    px(x - r + 2, y - 1, r, 1, "#a9adc8");
-  });
-  px(f[0] - SW - 1, f[1] - 1, RW + SW * 2 + 2, FD + 2, OUTC);
-  px(f[0] - SW, f[1], RW + SW * 2, FD, "#3c4370");
-  px(f[0] - SW, f[1] + 8, RW + SW * 2, 1, "#2e3460");
-  for (let i = 0; i <= RMC; i++) px(f[0] + i * TW, f[1] + 1, 1, FD - 2, "#2e3460");
-  [0.2, 0.5, 0.8].forEach((u) => {
-    px(f[0] + RW * u - 3, f[1] + 13, 6, 4, "#ffd166");
-    px(f[0] + RW * u - 2, f[1] + 14, 4, 2, "#ff9f45");
-  });
+  const RW = e[0] - f[0],
+    SW = 22,
+    BW = 20,
+    TOP = a[1] - WALLH - 14;
+  px(0, 0, W, H, "#06081a");
+  for (let y = 0; y < H; y += 2) for (let x = (y / 2) % 2; x < W; x += 4) px(x, y, 1, 1, "#0a0d24");
+  px(f[0] - SW - 2, TOP - 2, RW + SW * 2 + 4, f[1] + BW - TOP + 4, OUTC);
+  px(f[0] - SW, TOP, RW + SW * 2, f[1] + BW - TOP, "#2a3060");
   for (let r = 0; r < RMR; r++)
     for (let c = 0; c < RMC; c++) {
       const p = iso(c, r);
-      px(p[0], p[1], TW, TH, (c + r) % 2 ? "#585e8c" : "#636a9a");
-      px(p[0], p[1], TW, 1, "#4a5080");
-      px(p[0], p[1], 1, TH, "#4a5080");
-      px(p[0] + 2, p[1] + 2, TW - 4, 1, "#6f76a8");
+      const base = (c + r) % 2 ? "#5b6190" : "#61689a";
+      px(p[0], p[1], TW, TH, base);
+      px(p[0], p[1], TW, 1, "#474d7c");
+      px(p[0], p[1], 1, TH, "#474d7c");
+      px(p[0] + 1, p[1] + 1, TW - 2, 1, "#7076a8");
+      px(p[0] + 3, p[1] + 3, 2, 2, "#454b78");
+      px(p[0] + TW - 5, p[1] + 3, 2, 2, "#454b78");
+      px(p[0] + 3, p[1] + TH - 5, 2, 2, "#454b78");
+      px(p[0] + TW - 5, p[1] + TH - 5, 2, 2, "#454b78");
+      if ((c * 7 + r * 3) % 5 === 0) {
+        for (let k = 0; k < 4; k++) px(p[0] + 14, p[1] + 8 + k * 5, TW - 28, 2, "#4f5585");
+      }
     }
-  px(a[0] - SW - 1, a[1] - WALLH - 11, RW + SW * 2 + 2, WALLH + 12, OUTC);
-  px(a[0], a[1] - WALLH, RW, WALLH, "#666da2");
-  px(a[0] - SW, a[1] - WALLH - 10, RW + SW * 2, 10, "#454d82");
-  px(a[0] - SW, a[1] - WALLH - 10, RW + SW * 2, 2, "#5a62a0");
-  px(a[0], a[1] - 12, RW, 12, "#565d92");
-  px(a[0], a[1] - 12, RW, 1, "#7a80b8");
-  px(a[0], a[1] - 2, RW, 2, "#3a4170");
-  px(f[0] - SW - 1, a[1] - WALLH - 1, SW + 1, f[1] - a[1] + WALLH + 1, OUTC);
-  px(f[0] - SW, a[1] - WALLH, SW, f[1] - a[1] + WALLH, "#4a5180");
-  px(f[0] - 3, a[1] - WALLH, 3, f[1] - a[1] + WALLH, "#5d6496");
-  px(e[0], a[1] - WALLH - 1, SW + 1, f[1] - a[1] + WALLH + 1, OUTC);
-  px(e[0], a[1] - WALLH, SW, f[1] - a[1] + WALLH, "#4a5180");
-  px(e[0], a[1] - WALLH, 3, f[1] - a[1] + WALLH, "#5d6496");
-  px(f[0] - SW, f[1] - 6, RW + SW * 2, 6, "#8a90c8");
-  px(f[0] - SW, f[1] - 6, RW + SW * 2, 1, "#b4b9e6");
+  for (let r = 0; r < RMR; r++) {
+    const p = iso(0, r);
+    px(p[0], p[1], 6, TH, "rgba(10,12,30,.25)");
+  }
+  px(a[0], a[1], RW, 8, "rgba(10,12,30,.3)");
+  [
+    [2.5, 4],
+    [7.5, 4],
+  ].forEach(([c, r]) => {
+    const p = iso(c, r);
+    pxEllipse(p[0], p[1], 120, 60, "rgba(255,240,200,.05)");
+    pxEllipse(p[0], p[1], 80, 40, "rgba(255,240,200,.05)");
+  });
+  px(a[0], a[1] - WALLH, RW, WALLH, "#5a6196");
+  for (let i = 0; i < RMC; i++) {
+    const x = a[0] + i * TW;
+    px(x, a[1] - WALLH, 1, WALLH, "#4a5084");
+    px(x + 1, a[1] - WALLH, 1, WALLH, "#6c73aa");
+  }
+  px(a[0], a[1] - WALLH + 22, RW, 3, "#4a5084");
+  px(a[0], a[1] - WALLH + 25, RW, 1, "#6c73aa");
+  px(a[0], a[1] - 18, RW, 18, "#474d80");
+  px(a[0], a[1] - 18, RW, 2, "#7a80b8");
+  px(a[0], a[1] - 3, RW, 3, "#353a66");
+  px(f[0] - SW, TOP, RW + SW * 2, 14, "#1e2348");
+  px(f[0] - SW, TOP + 12, RW + SW * 2, 2, "#3a4176");
+  for (let x = f[0] - SW + 10; x < e[0] + SW - 10; x += 40) {
+    px(x, TOP + 4, 16, 4, "#ffe7a0");
+    px(x - 1, TOP + 3, 18, 1, "#0d1030");
+  }
+  [
+    [f[0] - SW, -1],
+    [e[0], 1],
+  ].forEach(([x0]) => {
+    px(x0, TOP + 14, SW, f[1] - TOP - 14, "#343a6e");
+    px(x0 + 2, TOP + 14, 2, f[1] - TOP - 14, "#4a5188");
+    px(x0 + SW - 4, TOP + 14, 2, f[1] - TOP - 14, "#262b55");
+    for (let y = TOP + 40; y < f[1]; y += 48) {
+      px(x0 + 4, y, SW - 8, 2, "#262b55");
+      px(x0 + 6, y + 8, 3, 3, "#5a62a0");
+    }
+  });
+  px(f[0] - SW, f[1], RW + SW * 2, BW, "#343a6e");
+  px(f[0] - SW, f[1], RW + SW * 2, 3, "#4f5790");
+  px(f[0] - SW, f[1] + BW - 3, RW + SW * 2, 3, "#1e2348");
+  for (let x = f[0]; x < e[0]; x += TW * 2) px(x + TW - 8, f[1] + 8, 16, 4, "#262b55");
   for (let i = 0; i < RMC; i++)
     wallFace("R", i, (w, Q) => {
-      Q(w - 1, -WALLH, 1, WALLH - 12, "#565d92");
-      Q(4, -WALLH + 6, 2, 2, "#8a90c8");
-      Q(w - 6, -WALLH + 6, 2, 2, "#8a90c8");
-      Q(w / 2 - 4, -WALLH + 16, 8, 2, i % 2 ? "#3fd8f5" : "#7bd88f");
+      Q(6, -WALLH + 8, 2, 2, "#8a90c8");
+      Q(w - 8, -WALLH + 8, 2, 2, "#8a90c8");
+      Q(w / 2 - 4, -WALLH + 14, 8, 2, i % 2 ? "#3fd8f5" : "#7bd88f");
     });
   ctx = save;
   ROOMBG = c2;
@@ -555,10 +568,6 @@ function drawKai(t) {
 function drawScene(t) {
   if (!ROOMBG) buildRoomBg();
   ctx.drawImage(ROOMBG, 0, 0);
-  for (let i = 0; i < 12; i++) {
-    const on = Math.sin(t / 400 + i * 1.7) > 0.6;
-    if (on) px(Math.floor((i * 211) % W), Math.floor((i * 71) % 300), 1, 1, "#ffffff");
-  }
   drawRoomWalls(t);
   const list = [];
   for (const k in S.blocks) {
