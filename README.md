@@ -10,7 +10,7 @@ Create your own astronaut, pack the ship on Earth, fly to the Moon, build a base
 
 1. **Pack the ship (Earth).** Choose the modules and supplies for your mission. Live graphs show mission time, life support, protective shield and resilience. More items make the ship heavier, so the trip takes longer and you have less time on the Moon. The airlock is always included.
 2. **Build the base (Moon).** The base is a room you can walk around and decorate: furniture goes on the floor, windows, shields and solar panels go on the walls. First make the base comfortable (a dining table and one decoration). Then keep four resources alive: **oxygen, power, food and hull**. Every block makes the base use more power and mission time. Play the power grid, storm shield and dark crater missions, and grow tomatoes in the greenhouse step by step: plant, water, then turn on the red and blue LED light, but not for too long or the plant burns and the base loses power.
-3. **Explore the surface.** Leave through the airlock to collect samples. Oxygen, shield and energy drop every second, so you must get back to the base in time.
+3. **Explore the surface.** Leave through the airlock to collect samples. Oxygen, shield and energy drop every second, so you must get back to the base in time. Each mission has its own real discoveries: Apollo 11 (Tranquility Base, the laser mirror, footprints), Apollo 17 (orange soil, rover tracks, moonquake station) and Artemis (Shackleton rim, Chang'e-4 far side, polar ice), each with a real NASA photo.
 
 ## KAI, the helper robot
 

@@ -53,6 +53,84 @@ const FACTS = [
     kind: "Hydrogen Plain",
     fact: "Hydrogen-rich materials like polyethylene shield radiation better than metal, because light atoms stop fast particles without creating as many secondaries.",
   },
+  {
+    kind: "Tranquility Base",
+    lv: 0,
+    fixed: true,
+    q: "Apollo 11 Eagle lunar module",
+    fact: "Apollo 11 landed here in the Sea of Tranquility on July 20, 1969. The bottom half of the Eagle lander is still standing on the Moon.",
+  },
+  {
+    kind: "Laser Mirror",
+    lv: 0,
+    fixed: true,
+    q: "laser ranging retroreflector Apollo",
+    fact: "Apollo 11 left a laser retroreflector that scientists still hit with lasers from Earth. It shows the Moon moves about 3.8 cm farther from Earth every year.",
+  },
+  {
+    kind: "Footprint Trail",
+    lv: 0,
+    q: "Apollo 11 bootprint",
+    fact: "With no wind or rain, astronaut footprints can last for millions of years. Buzz Aldrin photographed his own bootprint to study the lunar soil.",
+  },
+  {
+    kind: "Basalt Plain",
+    lv: 0,
+    q: "Apollo 11 lunar sample basalt",
+    fact: "The dark seas of the Moon are old lava plains. Apollo 11 rocks from here are about 3.6 to 3.9 billion years old.",
+  },
+  {
+    kind: "Orange Soil",
+    lv: 1,
+    fixed: true,
+    q: "Apollo 17 orange soil",
+    fact: "On Apollo 17, geologist Harrison Schmitt found orange soil. It is made of tiny glass beads from volcanic fire fountains about 3.6 billion years ago.",
+  },
+  {
+    kind: "Rover Tracks",
+    lv: 1,
+    q: "lunar roving vehicle Apollo 17",
+    fact: "Apollo 17's Lunar Roving Vehicle drove about 35.7 km in the Taurus-Littrow valley. The rover is still parked on the Moon.",
+  },
+  {
+    kind: "Moonquake Station",
+    lv: 1,
+    fixed: true,
+    q: "Apollo seismometer ALSEP",
+    fact: "Apollo astronauts left seismometers that recorded thousands of moonquakes until 1977. They showed the Moon still shakes a little.",
+  },
+  {
+    kind: "Split Boulder",
+    lv: 1,
+    q: "Apollo 17 split boulder",
+    fact: "At Taurus-Littrow, Apollo 17 sampled a giant split boulder. Rocks like this tell scientists how the Moon's crust formed.",
+  },
+  {
+    kind: "Shackleton Rim",
+    lv: 2,
+    fixed: true,
+    q: "Shackleton crater",
+    fact: "Shackleton crater is about 21 km wide and sits almost exactly on the lunar south pole. Its floor has not seen sunlight in billions of years.",
+  },
+  {
+    kind: "Far Side View",
+    lv: 2,
+    q: "far side of the moon",
+    fact: "In January 2019, China's Chang'e-4 made the first soft landing on the far side of the Moon, in Von Kármán crater, and measured the radiation dose used in this game.",
+  },
+  {
+    kind: "Ice Deposit",
+    lv: 2,
+    q: "Moon Mineralogy Mapper water ice",
+    fact: "NASA's Moon Mineralogy Mapper, flying on India's Chandrayaan-1, confirmed water ice at the lunar poles in 2018. Ice can become drinking water, oxygen and rocket fuel.",
+  },
+  {
+    kind: "Base Camp Site",
+    lv: 2,
+    fixed: true,
+    q: "Artemis base camp",
+    fact: "NASA's Artemis plans include a base camp near the south pole, with a habitat and rovers so astronauts can stay for weeks.",
+  },
 ];
 const NAMES = [
   "Aurelia",
@@ -294,7 +372,8 @@ const IMGQ = [
 async function fetchImage(entry, type) {
   try {
     const r = await fetch(
-      "https://images-api.nasa.gov/search?media_type=image&q=" + encodeURIComponent(IMGQ[type]),
+      "https://images-api.nasa.gov/search?media_type=image&q=" +
+        encodeURIComponent((FACTS[type] && FACTS[type].q) || IMGQ[type] || "Moon"),
     );
     const j = await r.json();
     const items = j.collection.items
@@ -446,6 +525,7 @@ function nodeAlive(tx, ty, n) {
 
 const POIC = 42;
 const poiCache = new Map();
+const usedFixed = new Set();
 function poiInCell(cx, cy) {
   const k = cx + "," + cy;
   if (poiCache.has(k)) return poiCache.get(k);
@@ -456,12 +536,25 @@ function poiInCell(cx, cy) {
     const x = (cx + 0.15 + 0.7 * hash(cx, cy, seed + 32)) * POIC,
       y = (cy + 0.15 + 0.7 * hash(cx, cy, seed + 34)) * POIC;
     if (Math.hypot(x, y) > 9) {
-      const type = Math.floor(hash(cx, cy, seed + 33) * FACTS.length);
+      const lvl = SV.plan && SV.plan.level != null ? SV.plan.level : 1;
+      const pool = FACTS.map((f, i) => i).filter(
+        (i) => FACTS[i].lv === undefined || FACTS[i].lv === lvl,
+      );
+      const spec = pool.filter((i) => FACTS[i].lv === lvl && !(FACTS[i].fixed && usedFixed.has(i)));
+      const gen = pool.filter((i) => FACTS[i].lv === undefined);
+      const pick = hash(cx, cy, seed + 33);
+      const type =
+        spec.length && pick < 0.6
+          ? spec[Math.floor((pick / 0.6) * spec.length)]
+          : gen[Math.floor(hash(cx, cy, seed + 36) * gen.length)];
+      if (FACTS[type].fixed) usedFixed.add(type);
       p = {
         x,
         y,
         type,
-        name: NAMES[Math.floor(hash(cx, cy, seed + 35) * NAMES.length)] + " " + FACTS[type].kind,
+        name: FACTS[type].fixed
+          ? FACTS[type].kind
+          : NAMES[Math.floor(hash(cx, cy, seed + 35) * NAMES.length)] + " " + FACTS[type].kind,
         key: k,
       };
     }
@@ -508,6 +601,7 @@ function newGame() {
   seed = Math.floor(Math.random() * 1e6);
   chunks.clear();
   poiCache.clear();
+  usedFixed.clear();
   G = {
     t: 0,
     over: false,
