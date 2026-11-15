@@ -94,7 +94,7 @@
         left: 1.2%;
         top: 2%;
         width: 26%;
-        min-width: 150px;
+        min-width: 210px;
       }
       .bar {
         margin-bottom: 0.8vw;
@@ -1946,9 +1946,9 @@
         hudT = 0;
         const day = Math.floor(G.t / DAY) + 1;
         $("stats").innerHTML =
-          bar("🫧 Life support", G.o2, 100, "#4cc9f0", G.o2 < 25) +
-          bar("🛡️ Hazard protection", G.haz, G.hazMax, "#b388ff", G.haz < 25 && !inSafe()) +
-          bar("⚡ Suit energy", G.en, 100, "#ffd166", G.en < 15) +
+          bar("🫧 Oxygen", G.o2, 100, "#4cc9f0", G.o2 < 25) +
+          bar("🛡️ Shield", G.haz, G.hazMax, "#b388ff", G.haz < 25 && !inSafe()) +
+          bar("⚡ Energy", G.en, 100, "#ffd166", G.en < 15) +
           `<div style="font-size:.9em">☢️ Dose <b>${G.dose.toFixed(1)}</b> / ${DLIM} mSv · 📅 Day ${day} · 🎒 ${invCount()}/${G.cap}<br>${G.rescues ? `🚑 Rescues ${G.rescues}/3 · ` : ""}${inSafe() ? "<span class='ok'>In lander shelter</span>" : ""}</div>`;
         const o = OBJ[G.obj];
         $("obj").innerHTML =

@@ -889,7 +889,7 @@
       </div>
     </div>
 
-    <script src="art/art.js"></script>
+    <script src="art/art.js?v=2"></script>
     <script>
       const W = 960,
         H = 540,
@@ -1552,6 +1552,8 @@
       function charOf(L) {
         return CHARS.includes(L.char) ? L.char : "hero";
       }
+      const CMX = 8,
+        CMT = 14;
       function charCanvas(L) {
         if (typeof ART === "undefined") return null;
         const k = charOf(L);
@@ -1570,8 +1572,8 @@
         if (!ready(base) || !ready(lab)) return null;
         const accN = ACCK[L.acc] || null;
         if (accN && !ready(AIMG.acc[accN])) return null;
-        const MX = 30,
-          MT = 50;
+        const MX = CMX,
+          MT = CMT;
         const cv2 = document.createElement("canvas");
         cv2.width = meta.w + MX * 2;
         cv2.height = meta.h + MT;
@@ -1585,18 +1587,20 @@
         g1.clearRect(0, 0, meta.w, meta.h);
         g1.drawImage(lab, 0, 0);
         const lb = g1.getImageData(0, 0, meta.w, meta.h).data;
-        const refs = [0, meta.ref.skin, meta.ref.hair, meta.ref.iris, meta.ref.trim];
         const d = px.data;
+        const ramp = (T, lv) =>
+          T.map((v) =>
+            Math.round(
+              lv === 0 ? v + (255 - v) * 0.32 : lv === 1 ? v : lv === 2 ? v * 0.78 : v * 0.6,
+            ),
+          );
         for (let p = 0; p < d.length; p += 4) {
           const li = Math.round(lb[p] / 60);
           if (!li || !tg[li] || !d[p + 3]) continue;
-          const T = tg[li];
-          const lum = d[p] * 0.3 + d[p + 1] * 0.59 + d[p + 2] * 0.11;
-          const f = lum / Math.max(refs[li], 1);
-          for (let c = 0; c < 3; c++) {
-            const v = f <= 1 ? T[c] * f : T[c] + (255 - T[c]) * Math.min(1, (f - 1) * 0.8);
-            d[p + c] = Math.max(0, Math.min(255, Math.round(v)));
-          }
+          const c3 = ramp(tg[li], Math.round(lb[p + 1] / 60));
+          d[p] = c3[0];
+          d[p + 1] = c3[1];
+          d[p + 2] = c3[2];
         }
         g1.putImageData(px, 0, 0);
         g.imageSmoothingEnabled = false;
@@ -1640,19 +1644,25 @@
         if (!cv2) return;
         const meta = ART[charOf(S)];
         const k = o.k || 2;
-        const s2 = (76 * k) / meta.h;
+        const a = Math.abs(c.getTransform().a) || 1;
+        const s2 = Math.max(1, Math.round(((76 * k) / meta.h) * a)) / a;
         const t = o.still ? 0 : R.t;
         const walking = o.mode === "walk";
         const fr = Math.floor(t * 8) % 4;
-        const bob = walking ? (fr % 2 ? -2 * k : 0) : 0;
-        const br = walking || o.mode === "sleep" ? 1 : 1 + Math.sin(t * 2.2) * 0.012;
+        const bob = walking
+          ? fr % 2
+            ? -2 * s2
+            : 0
+          : o.mode === "sleep" || o.still
+            ? 0
+            : Math.floor(t * 1.6) % 2
+              ? -s2
+              : 0;
         c.save();
-        c.imageSmoothingEnabled = s2 < 0.9;
-        c.imageSmoothingQuality = "high";
-        c.translate(Math.round(x), Math.round(y + bob));
-        c.scale((o.dir || 1) * s2, s2 * br);
-        if (walking) c.rotate(fr % 2 ? 0.03 : -0.03);
-        c.drawImage(cv2, -cv2.width / 2, -cv2.height);
+        c.imageSmoothingEnabled = false;
+        c.translate(Math.round(x * a) / a, Math.round((y + bob) * a) / a);
+        c.scale((o.dir || 1) * s2, s2);
+        c.drawImage(cv2, -Math.round(cv2.width / 2), -cv2.height);
         c.restore();
       }
 
@@ -2704,10 +2714,10 @@
         openModal(
           head("🎯 Mission board") +
             invHtml() +
-            `<div class="row"><div><b>🔧 Repair wires${f ? " (URGENT: " + f.t + ")" : ""}</b><small>${f ? "Reconnect the matching wires before time runs out to fix the fault." : "No fault right now. Practice for +10 units."}</small></div><button data-m="wires">Play</button></div>` +
-            `<div class="row"><div><b>🌱 Plant care</b><small>Keep water, light and nutrients balanced to grow rations. Real crops like Veggie lettuce need the same care.</small></div><button data-m="plant">Play</button></div>` +
+            `<div class="row"><div><b>⚡ Power grid repair${f ? " (URGENT: " + f.t + ")" : ""}</b><small>${f ? "Rotate the power tiles to bring solar power back to every module." : "No fault right now. Practice for +10 units."}</small></div><button data-m="wires">Play</button></div>` +
+            `<div class="row"><div><b>🌱 Greenhouse</b><small>Give each plant what it asks for to grow rations, like the Veggie garden on the ISS.</small></div><button data-m="plant">Play</button></div>` +
             `<div class="row"><div><b>☢️ Storm shield drill${st.state ? " (LIVE STORM!)" : ""}</b><small>${st.state ? "Block the particles with your polymer shield to cut the real dose." : "Practice for +15 units. In a real storm it cuts your dose by up to 60%."}</small></div><button data-m="storm">${st.state ? "Defend!" : "Practice"}</button></div>` +
-            `<div class="row"><div><b>🚙 Dust maze</b><small>Drive the rover through a lunar maze and collect regolith, ilmenite and ice.</small></div><button data-m="maze">Play</button></div>` +
+            `<div class="row"><div><b>🚙 Dark crater rover</b><small>Drive into a dark crater, scan for ice and minerals and bring them home.</small></div><button data-m="maze">Play</button></div>` +
             `<div class="row"><div><b>🚀 Surface expedition</b><small>${mod("airlock") ? "Explore the open lunar surface, mine, scan discoveries and bring loot home." : "Your ship has no airlock, so this is locked."}</small></div><button data-m="exp" ${mod("airlock") ? "" : "disabled"}>Go</button></div>`,
         );
       }
@@ -2947,7 +2957,7 @@
             const s3 = Math.min(cv2.width / sw, cv2.height / sh);
             const w = sw * s3,
               h = sh * s3;
-            c2.imageSmoothingEnabled = s3 < 0.9;
+            c2.imageSmoothingEnabled = false;
             c2.drawImage(im, sx, sy, sw, sh, (cv2.width - w) / 2, (cv2.height - h) / 2, w, h);
             return true;
           };
@@ -2964,7 +2974,13 @@
             if (cc) {
               const m = ART[v];
               const side = m.d * 2.6;
-              fit(cc, m.ex + 30 - side / 2, m.ey + 50 - side * 0.55, side, side);
+              fit(
+                cc,
+                Math.round(m.ex + CMX - side / 2),
+                Math.round(m.ey + CMT - side * 0.55),
+                Math.round(side),
+                Math.round(side),
+              );
             } else ok = false;
           } else if (key === "acc") {
             if (+v === 0) {
@@ -3532,7 +3548,35 @@
       const mg = $("mg"),
         mc = mg.getContext("2d");
       mc.scale(2, 2);
-      const WIRE = ["#ff5d73", "#4cc9f0", "#ffd166", "#7bd88f", "#b388ff"];
+      const PF = (n) => `${n}px "Press Start 2P", monospace`;
+      function Q(x, y, w, h, c) {
+        mc.fillStyle = c;
+        mc.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      }
+      function mask(rows, x, y, px, col) {
+        rows.forEach((r, j) => {
+          for (let i = 0; i < r.length; i++)
+            if (r[i] === "#") Q(x + i * px, y + j * px, px, px, col);
+        });
+      }
+      const ICO = {
+        drop: ["...#...", "..###..", ".#####.", ".#####.", "#######", ".#####.", "..###.."],
+        sun: ["#..#..#", ".#####.", ".#####.", "#######", ".#####.", ".#####.", "#..#..#"],
+        flask: ["..###..", "...#...", "...#...", "..###..", ".#####.", "#######", "#######"],
+      };
+      const TOOLS = [
+        { n: "WATER", ic: "drop", c: "#4cc9f0" },
+        { n: "LIGHT", ic: "sun", c: "#ffd166" },
+        { n: "FOOD", ic: "flask", c: "#7bd88f" },
+      ];
+      const GRID = { c: 6, r: 5, s: 60, ox: 140, oy: 62, tg: [0, 2, 4], src: 2 };
+      const DIRS = [
+        [0, -1, 1, 4],
+        [1, 0, 2, 8],
+        [0, 1, 4, 1],
+        [-1, 0, 8, 2],
+      ];
+      const rotm = (m) => ((m << 1) | (m >> 3)) & 15;
       function mgPos(e) {
         const r = mg.getBoundingClientRect();
         return {
@@ -3540,59 +3584,176 @@
           y: ((e.clientY - r.top) / r.height) * 420,
         };
       }
+      function genGrid() {
+        const { c, r } = GRID;
+        const m = Array.from({ length: r }, () => Array(c).fill(0));
+        const seen = Array.from({ length: r }, () => Array(c).fill(false));
+        const st = [[0, GRID.src]];
+        seen[GRID.src][0] = true;
+        while (st.length) {
+          const [x, y] = st[st.length - 1];
+          const o = DIRS.filter(([dx, dy]) => {
+            const nx = x + dx,
+              ny = y + dy;
+            return nx >= 0 && ny >= 0 && nx < c && ny < r && !seen[ny][nx];
+          });
+          if (!o.length) {
+            st.pop();
+            continue;
+          }
+          const [dx, dy, b, ob] = o[Math.floor(Math.random() * o.length)];
+          m[y][x] |= b;
+          m[y + dy][x + dx] |= ob;
+          seen[y + dy][x + dx] = true;
+          st.push([x + dx, y + dy]);
+        }
+        m[GRID.src][0] |= 8;
+        GRID.tg.forEach((ty) => (m[ty][c - 1] |= 2));
+        MG.tiles = m.map((row) =>
+          row.map((v) => {
+            let t = v;
+            const k = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < k; i++) t = rotm(t);
+            return t;
+          }),
+        );
+        MG.cur = [0, GRID.src];
+        MG.spin = {};
+        MG.pow = gridPow();
+      }
+      function gridPow() {
+        const { c, r } = GRID;
+        const t = MG.tiles;
+        const on = Array.from({ length: r }, () => Array(c).fill(false));
+        if (t[GRID.src][0] & 8) {
+          const q = [[0, GRID.src]];
+          on[GRID.src][0] = true;
+          while (q.length) {
+            const [x, y] = q.shift();
+            DIRS.forEach(([dx, dy, b, ob]) => {
+              const nx = x + dx,
+                ny = y + dy;
+              if (
+                nx >= 0 &&
+                ny >= 0 &&
+                nx < c &&
+                ny < r &&
+                !on[ny][nx] &&
+                t[y][x] & b &&
+                t[ny][nx] & ob
+              ) {
+                on[ny][nx] = true;
+                q.push([nx, ny]);
+              }
+            });
+          }
+        }
+        const lit = GRID.tg.map((ty) => on[ty][c - 1] && !!(t[ty][c - 1] & 2));
+        return { on, lit, n: lit.filter(Boolean).length };
+      }
+      function spinTile(x, y) {
+        MG.tiles[y][x] = rotm(MG.tiles[y][x]);
+        MG.spin[x + "," + y] = 0.12;
+        beep(520 + y * 40, 0.04);
+        MG.pow = gridPow();
+        if (MG.pow.n === 3) {
+          beep(1100, 0.15);
+          finishMG(true);
+        }
+      }
+      function plantUse(i) {
+        const p = MG.pl[i];
+        if (!p) return;
+        if (p.need && p.need.k === MG.tool) {
+          p.g = Math.min(100, p.g + 16);
+          p.need = null;
+          MG.combo++;
+          MG.pop.push({
+            x: 140 + i * 180,
+            y: 150,
+            m: MG.combo > 2 ? "x" + MG.combo + "!" : "+",
+            c: "#7bd88f",
+            t: 0,
+          });
+          beep(800 + Math.min(MG.combo, 6) * 80, 0.06);
+        } else {
+          p.h = Math.max(0, p.h - 8);
+          MG.combo = 0;
+          MG.pop.push({ x: 140 + i * 180, y: 150, m: "OOPS", c: "#ff5d73", t: 0 });
+          beep(180, 0.12);
+        }
+      }
       function startMG(kind) {
         $("ovMenu").classList.remove("on");
         R.paused = true;
         MG = { kind, t: 0, res: null, rt: 0, keys: {} };
         const T = {
           wires: [
-            "🔧 Repair wires",
-            "Click a wire end on the left, then its matching color on the right. Wrong match costs 2 seconds.",
+            "⚡ Power grid repair",
+            "Click the tiles to rotate them and bring solar power to all 3 modules. Keyboard: arrows to move, Space to rotate.",
           ],
           plant: [
-            "🌱 Plant care",
-            "Keep water, light and nutrients in the green zone. Click the buttons or press 1, 2, 3.",
+            "🌱 Greenhouse",
+            "Pick a tool (1 water, 2 light, 3 food), then click the plant that asks for it. Wrong tool hurts the plant. On the ISS, Veggie grows lettuce under red and blue LEDs.",
           ],
           storm: [
-            "☢️ Storm shield drill",
-            "Move the polymer shield with the mouse, finger or arrow keys. Block the particles!",
+            "☢️ Storm shield",
+            "Move the polyethylene shield with the mouse, finger or arrow keys. Block protons (yellow) and heavy ions (red). Plastic full of hydrogen stops radiation better than metal.",
           ],
           maze: [
-            "🚙 Dust maze",
-            "Arrow keys or WASD to drive. Collect everything before time runs out.",
+            "🚙 Dark crater rover",
+            "Arrows or WASD to drive. The crater is dark: press Space to scan. Collect ice and minerals before time runs out.",
           ],
         }[kind];
         $("mgTitle").textContent = T[0];
         $("mgHelp").textContent = T[1];
         if (kind === "wires") {
-          const r = WIRE.map((c, i) => i).sort(() => Math.random() - 0.5);
-          MG.max = 30 + (S.plan && mod("arm") ? 10 : 0);
-          MG.right = r;
-          MG.con = [];
-          MG.sel = -1;
-          MG.flash = 0;
+          MG.max = 50 + (S.plan && mod("arm") ? 10 : 0);
+          genGrid();
+          let g = 0;
+          while (MG.pow.n === 3 && g++ < 20) {
+            MG.tiles[GRID.src][0] = rotm(MG.tiles[GRID.src][0]);
+            MG.pow = gridPow();
+          }
         } else if (kind === "plant") {
-          MG.max = 28;
-          MG.m = [70, 70, 70];
-          MG.growth = 0;
-          MG.cd = [0, 0, 0];
+          MG.max = 32;
+          MG.pl = [0, 1, 2].map(() => ({ g: 10, h: 100, need: null }));
+          MG.tool = 0;
+          MG.sel = 1;
+          MG.sp = 0.8;
+          MG.combo = 0;
+          MG.pop = [];
         } else if (kind === "storm") {
-          MG.max = 25;
+          MG.max = 28;
           MG.sx = 320;
+          MG.tx = 320;
           MG.parts = [];
           MG.blocked = 0;
           MG.hit = 0;
           MG.total = 0;
-          MG.sp = 0;
-          MG.tx = 320;
+          MG.sp = 0.6;
+          MG.burst = 6;
+          MG.warn = 0;
+          MG.glow = 0;
+          MG.shake = 0;
         } else {
           genMaze();
-          MG.max = 40;
+          MG.max = 45;
           MG.dir = null;
+          MG.face = 1;
           MG.mt = 0;
+          MG.scan = 0;
+          MG.scd = 0;
+          MG.seen = {};
           MG.got = { regolith: 0, ilmenite: 0, ice: 0 };
+          revealMaze(2.7);
         }
         $("ovMG").classList.add("on");
+      }
+      function revealMaze(rad) {
+        for (let y = 0; y < 15; y++)
+          for (let x = 0; x < 21; x++)
+            if (Math.hypot(x - MG.x, y - MG.y) <= rad) MG.seen[x + "," + y] = 1;
       }
       function genMaze() {
         const MC = 21,
@@ -3720,84 +3881,80 @@
         ensureAudio();
         const p = mgPos(e);
         if (MG.kind === "wires") {
-          for (let i = 0; i < 5; i++) {
-            if (Math.hypot(p.x - 90, p.y - (60 + i * 66)) < 22 && MG.con[i] === undefined) {
-              MG.sel = i;
-              return;
-            }
-            if (MG.sel >= 0 && Math.hypot(p.x - 550, p.y - (60 + i * 66)) < 22) {
-              const rightColorIdx = MG.right[i];
-              if (rightColorIdx === MG.sel && !MG.con.some((x) => x === i)) {
-                MG.con[MG.sel] = i;
-                MG.sel = -1;
-                beep(900, 0.06);
-              } else {
-                MG.t += 2;
-                MG.flash = 0.3;
-                MG.sel = -1;
-                beep(200, 0.12);
-              }
-              if (MG.con.filter((x) => x !== undefined).length === 5) finishMG(true);
-              return;
-            }
+          const x = Math.floor((p.x - GRID.ox) / GRID.s),
+            y = Math.floor((p.y - GRID.oy) / GRID.s);
+          if (x >= 0 && y >= 0 && x < GRID.c && y < GRID.r) {
+            MG.cur = [x, y];
+            spinTile(x, y);
           }
         } else if (MG.kind === "plant") {
+          if (p.y > 360 && p.y < 408) {
+            for (let i = 0; i < 3; i++)
+              if (p.x > 115 + i * 140 && p.x < 245 + i * 140) {
+                MG.tool = i;
+                beep(600, 0.03);
+              }
+            return;
+          }
           for (let i = 0; i < 3; i++)
-            if (p.x > 60 + i * 190 && p.x < 60 + i * 190 + 170 && p.y > 330 && p.y < 400)
-              plantBoost(i);
+            if (Math.abs(p.x - (140 + i * 180)) < 75 && p.y > 70 && p.y < 350) {
+              MG.sel = i;
+              plantUse(i);
+            }
         } else if (MG.kind === "storm") {
           MG.tx = p.x;
         }
       });
       mg.addEventListener("pointermove", (e) => {
-        if (MG && MG.kind === "storm" && !MG.res) {
-          MG.tx = mgPos(e).x;
-        }
+        if (MG && MG.kind === "storm" && !MG.res) MG.tx = mgPos(e).x;
       });
-      function plantBoost(i) {
-        if (MG.cd[i] > 0) return;
-        MG.m[i] = Math.min(100, MG.m[i] + 24);
-        MG.cd[i] = 0.15;
-        beep(700 + i * 150, 0.05);
-      }
+      const MDIR = {
+        arrowup: "u",
+        arrowdown: "d",
+        arrowleft: "l",
+        arrowright: "r",
+        w: "u",
+        s: "d",
+        a: "l",
+        d: "r",
+      };
       window.addEventListener("keydown", (e) => {
         if (!MG) return;
         const k = e.key.toLowerCase();
         MG.keys[k] = true;
-        if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k))
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "enter"].includes(k))
           e.preventDefault();
-        if (MG.kind === "plant" && ["1", "2", "3"].includes(k)) plantBoost(+k - 1);
-        if (MG.kind === "maze") {
-          const m = {
-            arrowup: "u",
-            arrowdown: "d",
-            arrowleft: "l",
-            arrowright: "r",
-            w: "u",
-            s: "d",
-            a: "l",
-            d: "r",
-          }[k];
-          if (m) MG.dir = m;
+        if (MG.res) return;
+        if (MG.kind === "wires") {
+          const d = MDIR[k];
+          if (d) {
+            const v = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[d];
+            MG.cur = [
+              clamp(MG.cur[0] + v[0], 0, GRID.c - 1),
+              clamp(MG.cur[1] + v[1], 0, GRID.r - 1),
+            ];
+          }
+          if (k === " " || k === "enter") spinTile(MG.cur[0], MG.cur[1]);
+        } else if (MG.kind === "plant") {
+          if (["1", "2", "3"].includes(k)) MG.tool = +k - 1;
+          if (k === "arrowleft" || k === "a") MG.sel = Math.max(0, MG.sel - 1);
+          if (k === "arrowright" || k === "d") MG.sel = Math.min(2, MG.sel + 1);
+          if (k === " " || k === "enter") plantUse(MG.sel);
+        } else if (MG.kind === "maze") {
+          if (MDIR[k]) MG.dir = MDIR[k];
+          if (k === " " && MG.scd <= 0) {
+            MG.scan = 1.4;
+            MG.scd = 5;
+            revealMaze(6);
+            beep(1200, 0.08);
+          }
         }
       });
       window.addEventListener("keyup", (e) => {
         if (!MG) return;
         const k = e.key.toLowerCase();
         MG.keys[k] = false;
-        if (MG.kind === "maze") {
-          const m = {
-            arrowup: "u",
-            arrowdown: "d",
-            arrowleft: "l",
-            arrowright: "r",
-            w: "u",
-            s: "d",
-            a: "l",
-            d: "r",
-          }[k];
-          if (m && MG.dir === m) MG.dir = null;
-        }
+        if (MG.kind === "maze" && MDIR[k] && MG.dir === MDIR[k]) MG.dir = null;
       });
 
       function mgUpdate(dt) {
@@ -3810,57 +3967,122 @@
         MG.t += dt;
         const left = MG.max - MG.t;
         if (MG.kind === "wires") {
-          MG.flash = Math.max(0, MG.flash - dt);
+          Object.keys(MG.spin).forEach((k) => {
+            MG.spin[k] -= dt;
+            if (MG.spin[k] <= 0) delete MG.spin[k];
+          });
           if (left <= 0) finishMG(false);
         } else if (MG.kind === "plant") {
-          for (let i = 0; i < 3; i++) {
-            MG.m[i] = Math.max(0, MG.m[i] - [7, 5, 9][i] * dt);
-            MG.cd[i] = Math.max(0, MG.cd[i] - dt);
+          MG.sp -= dt;
+          if (MG.sp <= 0 && left > 2) {
+            const free = MG.pl.map((p, i) => i).filter((i) => !MG.pl[i].need);
+            if (free.length) {
+              const i = free[Math.floor(Math.random() * free.length)];
+              const T = Math.max(2.6, 4.4 - MG.t * 0.05);
+              MG.pl[i].need = { k: Math.floor(Math.random() * 3), t: T, T };
+            }
+            MG.sp = Math.max(0.8, 1.9 - MG.t * 0.035);
           }
-          const ok = MG.m.every((v) => v >= 35 && v <= 88);
-          MG.growth = clamp(MG.growth + (ok ? 4.2 : -1.6) * dt, 0, 100);
+          MG.pl.forEach((p, i) => {
+            if (p.need) {
+              p.need.t -= dt;
+              if (p.need.t <= 0) {
+                p.need = null;
+                p.h = Math.max(0, p.h - 22);
+                MG.combo = 0;
+                MG.pop.push({ x: 140 + i * 180, y: 150, m: "TOO LATE", c: "#ff9f45", t: 0 });
+                beep(160, 0.1);
+              }
+            } else if (p.h > 40) p.g = Math.min(100, p.g + 1.4 * dt);
+          });
+          MG.pop.forEach((q) => (q.t += dt));
+          MG.pop = MG.pop.filter((q) => q.t < 0.9);
           if (left <= 0) {
-            const n = MG.growth >= 85 ? 3 : MG.growth >= 55 ? 2 : MG.growth >= 25 ? 1 : 0;
+            const sum = MG.pl.reduce((a, p) => a + (p.h > 0 ? p.g : 0), 0);
+            const n = sum >= 210 ? 3 : sum >= 140 ? 2 : sum >= 70 ? 1 : 0;
             finishMG(n > 0, n);
           }
         } else if (MG.kind === "storm") {
-          if (MG.keys.arrowleft || MG.keys.a) MG.tx -= 420 * dt;
-          if (MG.keys.arrowright || MG.keys.d) MG.tx += 420 * dt;
+          if (MG.keys.arrowleft || MG.keys.a) MG.tx -= 440 * dt;
+          if (MG.keys.arrowright || MG.keys.d) MG.tx += 440 * dt;
           MG.tx = clamp(MG.tx, 70, 570);
-          MG.sx += (MG.tx - MG.sx) * Math.min(1, 12 * dt);
-          MG.sp -= dt;
-          if (MG.sp <= 0 && left > 1.5) {
-            MG.parts.push({ x: rnd(40, 600), y: -10, v: 150 + MG.t * 7 });
-            MG.total++;
-            MG.sp = 0.42 - MG.t * 0.008;
+          MG.sx += (MG.tx - MG.sx) * Math.min(1, 14 * dt);
+          MG.glow = Math.max(0, MG.glow - dt * 3);
+          MG.shake = Math.max(0, MG.shake - dt * 3);
+          const spawn = (x, heavy, v) => {
+            const tx = 320 + rnd(-26, 26),
+              ty = 360;
+            const d = Math.hypot(tx - x, ty + 10);
+            MG.parts.push({
+              x,
+              y: -10,
+              vx: ((tx - x) / d) * v,
+              vy: ((ty + 10) / d) * v,
+              heavy,
+              tr: [],
+            });
+          };
+          if (left > 1.5) {
+            MG.sp -= dt;
+            if (MG.sp <= 0) {
+              const heavy = Math.random() < 0.22;
+              spawn(rnd(20, 620), heavy, heavy ? 120 + MG.t * 3 : 170 + MG.t * 6);
+              MG.sp = Math.max(0.22, 0.62 - MG.t * 0.014);
+            }
+            MG.burst -= dt;
+            if (MG.burst <= 1.2 && MG.warn <= 0) {
+              MG.warn = 1.2;
+              MG.side = Math.random() < 0.5 ? 0 : 1;
+            }
+            if (MG.warn > 0) {
+              MG.warn -= dt;
+              if (MG.warn <= 0) {
+                for (let i = 0; i < 6; i++)
+                  spawn((MG.side ? 400 : 40) + i * 36, false, 230 + i * 8);
+                MG.burst = 7;
+              }
+            }
           }
           MG.parts.forEach((p) => {
-            p.y += p.v * dt;
+            p.tr.unshift([p.x, p.y]);
+            if (p.tr.length > 4) p.tr.pop();
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
           });
           MG.parts = MG.parts.filter((p) => {
-            if (p.y > 318 && p.y < 334 && Math.abs(p.x - MG.sx) < 68) {
-              MG.blocked++;
-              beep(1000, 0.03, 0.02);
+            const w = p.heavy ? 2 : 1;
+            if (p.y > 272 && p.y < 296 && Math.abs(p.x - MG.sx) < 66) {
+              MG.blocked += w;
+              MG.total += w;
+              MG.glow = 1;
+              beep(p.heavy ? 500 : 1000, 0.03, 0.02);
               return false;
             }
-            if (p.y > 372) {
-              MG.hit++;
+            if (p.y > 345) {
+              MG.hit += w;
+              MG.total += w;
+              MG.shake = 1;
+              beep(140, 0.06, 0.03);
               return false;
             }
             return true;
           });
           if (left <= 0) finishMG(true, MG.total ? MG.blocked / MG.total : 0);
         } else {
+          MG.scan = Math.max(0, MG.scan - dt);
+          MG.scd = Math.max(0, MG.scd - dt);
           MG.mt += dt;
           while (MG.mt >= 0.11) {
             MG.mt -= 0.11;
             if (MG.dir) {
               const d = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[MG.dir];
+              if (d[0]) MG.face = d[0];
               const nx = MG.x + d[0],
                 ny = MG.y + d[1];
               if (MG.g[ny] && MG.g[ny][nx] === 0) {
                 MG.x = nx;
                 MG.y = ny;
+                revealMaze(2.7);
                 const k = nx + "," + ny;
                 if (MG.items[k]) {
                   MG.got[MG.items[k]]++;
@@ -3873,133 +4095,326 @@
           if (left <= 0 || !Object.keys(MG.items).length) finishMG(true, MG.got);
         }
       }
+      function drawPipe(x, y, s, m, on, sp) {
+        const cx = x + s / 2,
+          cy = y + s / 2;
+        mc.save();
+        mc.translate(cx, cy);
+        if (sp > 0) mc.rotate((-sp / 0.12) * (Math.PI / 2));
+        const seg = (w, col) => {
+          mc.fillStyle = col;
+          mc.fillRect(-w / 2, -w / 2, w, w);
+          if (m & 1) mc.fillRect(-w / 2, -s / 2, w, s / 2);
+          if (m & 2) mc.fillRect(0, -w / 2, s / 2, w);
+          if (m & 4) mc.fillRect(-w / 2, 0, w, s / 2);
+          if (m & 8) mc.fillRect(-s / 2, -w / 2, s / 2, w);
+        };
+        seg(18, "#0b0f2a");
+        seg(12, on ? "#3fd8f5" : "#6a7299");
+        if (on) seg(4, "#e6fdff");
+        else seg(4, "#8f97bd");
+        mc.restore();
+      }
+      function drawPlant(cx, p, sel, t) {
+        const base = 300;
+        Q(cx - 34, base, 68, 10, "#8a3f22");
+        Q(cx - 30, base + 10, 60, 32, "#c4622d");
+        Q(cx - 30, base + 10, 60, 4, "#e08446");
+        Q(cx - 26, base - 4, 52, 6, "#4a3020");
+        const wilt = p.h < 35;
+        const sc = wilt ? "#9b8a3c" : "#2f8f3f",
+          lc = wilt ? "#c2ad4a" : "#5fd36a",
+          ld = wilt ? "#8a7a30" : "#36a447";
+        const hgt = Math.round(14 + p.g * 1.5);
+        const sway = Math.round(Math.sin(t / 600 + cx) * 2);
+        Q(cx - 3, base - hgt, 6, hgt, "#123a1a");
+        Q(cx - 2, base - hgt, 4, hgt, sc);
+        for (let yy = base - 18, j = 0; yy > base - hgt + 6; yy -= 20, j++) {
+          const dir = j % 2 ? 1 : -1;
+          const lx = dir > 0 ? cx + 2 : cx - 24;
+          Q(lx + sway, yy - 2, 22, 10, "#123a1a");
+          Q(lx + 1 + sway, yy - 1, 20, 8, lc);
+          Q(lx + 1 + sway, yy + 4, 20, 3, ld);
+        }
+        if (p.g >= 70) {
+          [
+            [-12, -hgt + 10],
+            [10, -hgt + 22],
+            [-6, -hgt + 30],
+          ].forEach(([dx, dy]) => {
+            Q(cx + dx - 1, base + dy - 1, 10, 10, "#5a0d0d");
+            Q(cx + dx, base + dy, 8, 8, "#ff4f4f");
+            Q(cx + dx + 1, base + dy + 1, 3, 3, "#ffb3b3");
+          });
+        }
+        Q(cx - 30, base + 48, 60, 6, "#0b0f2a");
+        Q(
+          cx - 29,
+          base + 49,
+          (58 * p.h) / 100,
+          4,
+          p.h > 50 ? "#7bd88f" : p.h > 25 ? "#ffd166" : "#ff5d73",
+        );
+        if (sel) {
+          mc.strokeStyle = "#ffd166";
+          mc.lineWidth = 2;
+          mc.strokeRect(cx - 70, 70, 140, 290);
+        }
+        if (p.need) {
+          const by = Math.max(60, base - hgt - 58);
+          const tool = TOOLS[p.need.k];
+          const urgent = p.need.t < 1.4 && Math.floor(t / 120) % 2;
+          Q(cx - 24, by - 2, 48, 46, "#0b0f2a");
+          Q(cx - 22, by, 44, 42, urgent ? "#ffe3e3" : "#ffffff");
+          Q(cx - 4, by + 42, 8, 8, "#ffffff");
+          mask(ICO[tool.ic], cx - 14, by + 6, 4, tool.c);
+          Q(cx - 22, by + 54, 44, 5, "#0b0f2a");
+          Q(
+            cx - 21,
+            by + 55,
+            (42 * p.need.t) / p.need.T,
+            3,
+            p.need.t < 1.4 ? "#ff5d73" : "#7bd88f",
+          );
+        }
+      }
+      function drawRover(x, y, f) {
+        mc.save();
+        mc.translate(x, y);
+        mc.scale(f, 1);
+        Q(-11, -7, 22, 11, "#0b0f2a");
+        Q(-10, -6, 20, 9, "#eef1ff");
+        Q(2, -5, 7, 4, "#3fa7ff");
+        Q(-10, 0, 20, 3, "#ff9f45");
+        Q(-9, 3, 6, 6, "#0b0f2a");
+        Q(3, 3, 6, 6, "#0b0f2a");
+        Q(-7, 5, 2, 2, "#8f97bd");
+        Q(5, 5, 2, 2, "#8f97bd");
+        Q(-6, -11, 2, 5, "#8f97bd");
+        Q(-8, -12, 6, 2, "#ffd166");
+        mc.restore();
+      }
+      function drawItem(kind, x, y, t) {
+        const b = Math.round(Math.sin(t / 250 + x) * 1);
+        if (kind === "ice") {
+          Q(x - 7, y - 7 + b, 14, 14, "#0b0f2a");
+          Q(x - 6, y - 6 + b, 12, 12, "#9fe8ff");
+          Q(x - 6, y - 6 + b, 12, 3, "#e6fbff");
+          Q(x - 4, y - 2 + b, 3, 3, "#ffffff");
+        } else if (kind === "ilmenite") {
+          Q(x - 6, y - 5 + b, 12, 11, "#0b0f2a");
+          Q(x - 5, y - 4 + b, 10, 9, "#4b4f63");
+          Q(x - 3, y - 2 + b, 3, 3, "#ff9f45");
+          Q(x + 1, y + 1 + b, 2, 2, "#ff9f45");
+        } else {
+          Q(x - 7, y - 3 + b, 8, 7, "#0b0f2a");
+          Q(x - 6, y - 2 + b, 6, 5, "#c9ccd8");
+          Q(x, y - 5 + b, 8, 8, "#0b0f2a");
+          Q(x + 1, y - 4 + b, 6, 6, "#9ea2b5");
+        }
+      }
       function mgDraw(t) {
         if (!MG) return;
-        mc.fillStyle = "#0a0e2a";
-        mc.fillRect(0, 0, 640, 420);
         const left = Math.max(0, MG.max - MG.t);
-        mc.fillStyle = "#fff";
-        mc.font = "bold 14px sans-serif";
-        mc.textAlign = "left";
-        mc.fillText("⏱️ " + left.toFixed(0) + " s", 10, 20);
+        mc.save();
+        if (MG.kind === "storm" && MG.shake > 0)
+          mc.translate(Math.round(rnd(-3, 3) * MG.shake), Math.round(rnd(-3, 3) * MG.shake));
+        Q(0, 0, 640, 420, "#0a0e2a");
         if (MG.kind === "wires") {
-          if (MG.flash > 0) {
-            mc.fillStyle = "rgba(255,60,60,.2)";
-            mc.fillRect(0, 0, 640, 420);
-          }
-          for (let i = 0; i < 5; i++) {
-            const y = 60 + i * 66;
-            mc.fillStyle = WIRE[i];
-            mc.beginPath();
-            mc.arc(90, y, 18, 0, 7);
-            mc.fill();
-            if (MG.sel === i) {
-              mc.strokeStyle = "#fff";
-              mc.lineWidth = 4;
-              mc.stroke();
+          for (let i = 0; i < 40; i++) Q((i * 97) % 640, (i * 53) % 420, 2, 2, "#1d2660");
+          const { c, r, s, ox, oy } = GRID;
+          Q(ox - 8, oy - 8, c * s + 16, r * s + 16, "#0b0f2a");
+          Q(ox - 6, oy - 6, c * s + 12, r * s + 12, "#2a3470");
+          for (let y = 0; y < r; y++)
+            for (let x = 0; x < c; x++) {
+              const px = ox + x * s,
+                py = oy + y * s;
+              Q(px + 2, py + 2, s - 4, s - 4, "#161d4a");
+              Q(px + 2, py + 2, s - 4, 3, "#222b66");
+              Q(px + 5, py + 5, 3, 3, "#2f3a80");
+              Q(px + s - 8, py + s - 8, 3, 3, "#2f3a80");
+              drawPipe(px, py, s, MG.tiles[y][x], MG.pow.on[y][x], MG.spin[x + "," + y] || 0);
             }
-            mc.fillStyle = WIRE[MG.right[i]];
-            mc.beginPath();
-            mc.arc(550, y, 18, 0, 7);
-            mc.fill();
-          }
-          MG.con.forEach((ri, i) => {
-            if (ri === undefined) return;
-            mc.strokeStyle = WIRE[i];
-            mc.lineWidth = 8;
-            mc.beginPath();
-            mc.moveTo(108, 60 + i * 66);
-            mc.bezierCurveTo(300, 60 + i * 66, 340, 60 + ri * 66, 532, 60 + ri * 66);
-            mc.stroke();
+          const [cx2, cy2] = MG.cur;
+          mc.strokeStyle = "#ffd166";
+          mc.lineWidth = 3;
+          mc.strokeRect(ox + cx2 * s + 1.5, oy + cy2 * s + 1.5, s - 3, s - 3);
+          const sy = oy + GRID.src * s + s / 2;
+          Q(ox - 30, sy - 6, 30, 12, "#0b0f2a");
+          Q(ox - 30, sy - 3, 30, 6, "#3fd8f5");
+          Q(30, sy - 46, 80, 92, "#0b0f2a");
+          Q(34, sy - 42, 72, 84, "#8f97bd");
+          for (let j = 0; j < 4; j++)
+            for (let i = 0; i < 3; i++)
+              Q(38 + i * 23, sy - 38 + j * 20, 20, 17, i % 2 === j % 2 ? "#2d5bd6" : "#3a6ff0");
+          Q(38, sy - 38, 64, 2, "#9fc4ff");
+          mc.fillStyle = "#ffd166";
+          mc.font = PF(8);
+          mc.textAlign = "center";
+          mc.fillText("SOLAR", 70, sy + 62);
+          const NM = ["LAB", "HAB", "AIR"];
+          GRID.tg.forEach((ty, i) => {
+            const my = oy + ty * s + s / 2;
+            const on = MG.pow.lit[i];
+            Q(ox + c * s, my - 6, 22, 12, "#0b0f2a");
+            Q(ox + c * s, my - 3, 22, 6, on ? "#3fd8f5" : "#6a7299");
+            Q(ox + c * s + 22, my - 26, 72, 52, "#0b0f2a");
+            Q(ox + c * s + 24, my - 24, 68, 48, "#c9cee8");
+            Q(ox + c * s + 24, my - 24, 68, 6, "#eef1ff");
+            Q(ox + c * s + 32, my - 12, 20, 16, on ? "#ffd84a" : "#2a2f4a");
+            Q(ox + c * s + 58, my - 12, 20, 16, on ? "#ffd84a" : "#2a2f4a");
+            mc.fillStyle = on ? "#1b6b2a" : "#6a2a2a";
+            mc.font = PF(7);
+            mc.fillText(NM[i], ox + c * s + 58, my + 18);
           });
-        } else if (MG.kind === "plant") {
-          const N = ["💧 Water", "💡 Light", "🧪 Nutrients"],
-            C = ["#5aa9ff", "#ffd166", "#7bd88f"];
-          for (let i = 0; i < 3; i++) {
-            const x = 60 + i * 190;
-            mc.fillStyle = "#12183f";
-            mc.fillRect(x, 50, 170, 260);
-            mc.fillStyle = "rgba(123,216,143,.2)";
-            mc.fillRect(x, 50 + 260 * (1 - 0.88), 170, 260 * 0.53);
-            mc.fillStyle = C[i];
-            mc.fillRect(x + 30, 50 + 260 * (1 - MG.m[i] / 100), 110, (260 * MG.m[i]) / 100);
-            mc.fillStyle = "#fff";
-            mc.textAlign = "center";
-            mc.fillText(N[i] + " (" + (i + 1) + ")", x + 85, 40);
-            mc.fillStyle = MG.cd[i] > 0 ? "#555b7a" : "#ff9f45";
-            mc.fillRect(x, 330, 170, 70);
-            mc.fillStyle = "#1b1200";
-            mc.font = "bold 18px sans-serif";
-            mc.fillText("Boost", x + 85, 372);
-            mc.font = "bold 14px sans-serif";
-          }
-          mc.fillStyle = "#12183f";
-          mc.fillRect(200, 8, 240, 14);
-          mc.fillStyle = "#7bd88f";
-          mc.fillRect(200, 8, (240 * MG.growth) / 100, 14);
           mc.fillStyle = "#fff";
-          mc.textAlign = "center";
-          mc.fillText("🌱 growth", 320, 20);
-        } else if (MG.kind === "storm") {
-          mc.fillStyle = "rgba(255,150,30,.08)";
-          mc.fillRect(0, 0, 640, 420);
-          MG.parts.forEach((p) => {
-            mc.fillStyle = "#ffd166";
-            mc.beginPath();
-            mc.arc(p.x, p.y, 6, 0, 7);
-            mc.fill();
-            mc.strokeStyle = "rgba(255,210,90,.5)";
-            mc.lineWidth = 2;
-            mc.beginPath();
-            mc.moveTo(p.x, p.y);
-            mc.lineTo(p.x - 3, p.y - 20);
-            mc.stroke();
-          });
-          mc.fillStyle = "#7b4fd0";
-          mc.beginPath();
-          mc.roundRect(MG.sx - 68, 318, 136, 16, 8);
-          mc.fill();
-          mc.fillStyle = "#e8dcff";
-          mc.font = "bold 12px sans-serif";
-          mc.textAlign = "center";
-          mc.fillText("H  H  H", MG.sx, 330);
-          drawMira(mc, 320, 414, 0.62, { mode: "idle", dir: 1 });
+          mc.font = PF(9);
           mc.textAlign = "left";
+          mc.fillText(`POWER ${MG.pow.n}/3`, 470, 26);
+        } else if (MG.kind === "plant") {
+          Q(0, 0, 640, 420, "#10233a");
+          for (let x = 0; x < 640; x += 32) Q(x, 0, 2, 360, "#163050");
+          Q(0, 30, 640, 14, "#0b0f2a");
+          for (let x = 8; x < 640; x += 16) Q(x, 36, 8, 5, x % 32 === 8 ? "#ff3d6e" : "#5a6bff");
+          mc.fillStyle = "rgba(200,80,255,.07)";
+          mc.fillRect(0, 44, 640, 300);
+          Q(0, 344, 640, 12, "#3a2a20");
+          MG.pl.forEach((p, i) => drawPlant(140 + i * 180, p, MG.sel === i, t));
+          TOOLS.forEach((tl, i) => {
+            const x = 115 + i * 140;
+            const on = MG.tool === i;
+            Q(x, 362, 130, 44, on ? "#ffd166" : "#0b0f2a");
+            Q(x + 3, 365, 124, 38, on ? "#2a3470" : "#1b2350");
+            mask(ICO[tl.ic], x + 10, 370, 4, tl.c);
+            mc.fillStyle = "#fff";
+            mc.font = PF(8);
+            mc.textAlign = "left";
+            mc.fillText(i + 1 + " " + tl.n, x + 44, 389);
+          });
+          MG.pop.forEach((q) => {
+            mc.fillStyle = q.c;
+            mc.font = PF(10);
+            mc.textAlign = "center";
+            mc.fillText(q.m, q.x, q.y - q.t * 40);
+          });
+          const sum = MG.pl.reduce((a, p) => a + (p.h > 0 ? p.g : 0), 0);
+          Q(220, 8, 244, 16, "#0b0f2a");
+          Q(222, 10, (240 * Math.min(sum, 300)) / 300, 12, "#7bd88f");
+          [70, 140, 210].forEach((v) => Q(222 + (240 * v) / 300, 8, 2, 16, "#ffd166"));
           mc.fillStyle = "#fff";
-          mc.font = "bold 14px sans-serif";
-          mc.fillText(`blocked ${MG.blocked} · hit ${MG.hit}`, 500, 20);
+          mc.font = PF(8);
+          mc.textAlign = "left";
+          mc.fillText("HARVEST", 480, 21);
+          if (MG.combo > 1) {
+            mc.fillStyle = "#ffd166";
+            mc.fillText("COMBO x" + MG.combo, 470, 60);
+          }
+        } else if (MG.kind === "storm") {
+          for (let i = 0; i < 60; i++)
+            Q((i * 131) % 640, (i * 71) % 300, 2, 2, i % 6 ? "#2a3470" : "#cfd8ff");
+          Q(560, 30, 40, 40, "#ff9f45");
+          Q(566, 36, 28, 28, "#ffd166");
+          if (MG.warn > 0 && Math.floor(t / 100) % 2) {
+            mc.fillStyle = "rgba(255,120,40,.18)";
+            mc.fillRect(0, 0, 640, 420);
+            mc.fillStyle = "#ffd166";
+            mc.font = PF(14);
+            mc.textAlign = "center";
+            mc.fillText(MG.side ? "FLARE! >>>" : "<<< FLARE!", 320, 120);
+          }
+          Q(0, 398, 640, 22, "#8a8fa8");
+          Q(0, 398, 640, 4, "#b9bdd0");
+          for (let x = 0; x < 640; x += 46) Q(x + 10, 408, 10, 4, "#6f7490");
+          drawMira(mc, 320, 400, 1, { mode: "idle", dir: 1, k: 1.05 });
+          MG.parts.forEach((p) => {
+            const sz = p.heavy ? 10 : 6;
+            const col = p.heavy ? "#ff5d73" : "#ffd166";
+            p.tr.forEach((q, i) => {
+              mc.globalAlpha = 0.5 - i * 0.12;
+              Q(q[0] - sz / 4, q[1] - sz / 4, sz / 2, sz / 2, col);
+            });
+            mc.globalAlpha = 1;
+            Q(p.x - sz / 2 - 1, p.y - sz / 2 - 1, sz + 2, sz + 2, "#2a0a0a");
+            Q(p.x - sz / 2, p.y - sz / 2, sz, sz, col);
+            Q(p.x - sz / 2, p.y - sz / 2, sz / 2, sz / 2, "#ffffff");
+          });
+          const gx = MG.sx;
+          if (MG.glow > 0) {
+            mc.globalAlpha = MG.glow * 0.5;
+            Q(gx - 74, 272, 148, 30, "#e6dcff");
+            mc.globalAlpha = 1;
+          }
+          Q(gx - 68, 278, 136, 18, "#0b0f2a");
+          Q(gx - 66, 280, 132, 14, "#b9a3ff");
+          Q(gx - 66, 280, 132, 4, "#e6dcff");
+          Q(gx - 66, 290, 132, 4, "#7b5fd0");
+          mc.fillStyle = "#3a1d80";
+          mc.font = PF(7);
+          mc.textAlign = "center";
+          mc.fillText("H H H H", gx, 291);
+          const pct = MG.total ? Math.round((MG.blocked / MG.total) * 100) : 100;
+          mc.fillStyle = "#fff";
+          mc.font = PF(9);
+          mc.textAlign = "left";
+          mc.fillText(`BLOCKED ${pct}%`, 440, 26);
         } else {
           const MS = 26,
             ox = 47,
             oy = 15;
           for (let y = 0; y < 15; y++)
             for (let x = 0; x < 21; x++) {
-              mc.fillStyle = MG.g[y][x] ? "#4a4f78" : "#b9bdd0";
-              mc.fillRect(ox + x * MS, oy + y * MS, MS, MS);
+              const px = ox + x * MS,
+                py = oy + y * MS;
+              if (MG.g[y][x]) {
+                Q(px, py, MS, MS, "#2d3158");
+                Q(px, py, MS, 5, "#4a4f80");
+                Q(px + 4, py + 10, 4, 4, "#3a3f6c");
+              } else {
+                Q(px, py, MS, MS, "#a5a9bd");
+                if ((x * 7 + y * 13) % 5 === 0) Q(px + 8, py + 12, 3, 3, "#8a8ea4");
+                if ((x * 11 + y * 3) % 7 === 0) Q(px + 17, py + 5, 2, 2, "#c4c7d6");
+              }
             }
-          mc.font = "18px serif";
-          mc.textAlign = "center";
-          mc.textBaseline = "middle";
           Object.keys(MG.items).forEach((k) => {
+            if (!MG.seen[k]) return;
             const [x, y] = k.split(",").map(Number);
-            mc.fillText(
-              MG.items[k] === "ice" ? "🧊" : MG.items[k] === "ilmenite" ? "🔶" : "🪨",
-              ox + x * MS + MS / 2,
-              oy + y * MS + MS / 2,
-            );
+            drawItem(MG.items[k], ox + x * MS + MS / 2, oy + y * MS + MS / 2, t);
           });
-          mc.font = "22px serif";
-          mc.fillText("🚙", ox + MG.x * MS + MS / 2, oy + MG.y * MS + MS / 2);
-          mc.textBaseline = "alphabetic";
+          drawRover(ox + MG.x * MS + MS / 2, oy + MG.y * MS + MS / 2 + 2, MG.face);
+          for (let y = 0; y < 15; y++)
+            for (let x = 0; x < 21; x++) {
+              const d = Math.hypot(x - MG.x, y - MG.y);
+              const lit = d <= 2.7 || (MG.scan > 0 && d <= 6);
+              if (lit) continue;
+              Q(
+                ox + x * MS,
+                oy + y * MS,
+                MS,
+                MS,
+                MG.seen[x + "," + y] ? "rgba(5,8,26,.6)" : "#05081a",
+              );
+            }
+          mc.fillStyle = "#fff";
+          mc.font = PF(8);
+          mc.textAlign = "left";
+          const left2 = Object.keys(MG.items).length;
+          mc.fillText(`LEFT ${left2}`, 470, 12);
+          mc.fillStyle = MG.scd > 0 ? "#6a7299" : "#3fd8f5";
+          mc.fillText(MG.scd > 0 ? `SCAN ${Math.ceil(MG.scd)}s` : "SPACE: SCAN", 140, 12);
         }
+        mc.fillStyle = left < 6 && Math.floor(t / 250) % 2 ? "#ff5d73" : "#ffffff";
+        mc.font = PF(10);
+        mc.textAlign = "left";
+        mc.fillText("TIME " + Math.ceil(left), 10, MG.kind === "maze" ? 12 : 24);
         if (MG.res) {
-          mc.fillStyle = "rgba(0,0,0,.65)";
-          mc.fillRect(0, 150, 640, 120);
+          Q(0, 160, 640, 100, "#0b0f2a");
+          Q(0, 164, 640, 92, MG.res.ok ? "#14402a" : "#4a1420");
           mc.fillStyle = MG.res.ok ? "#7bd88f" : "#ff5d73";
-          mc.font = "bold 28px sans-serif";
+          mc.font = PF(22);
           mc.textAlign = "center";
-          mc.fillText(MG.res.ok ? "Success!" : "Time's up!", 320, 215);
+          mc.fillText(MG.res.ok ? "SUCCESS!" : "TIME'S UP!", 320, 222);
         }
+        mc.restore();
         mc.textAlign = "left";
       }
 
@@ -4067,7 +4482,7 @@
       function showTitle() {
         const has = S.started;
         $("titleBox").innerHTML =
-          `<h2>🌙 Lunar Base Junior</h2><p>A life-sim on the Moon. Create your astronaut, plan the mission, fly to the Moon, and look after your crew at Hopper Base near the lunar south pole, where NASA plans to land humans with Artemis.</p><ul><li>🎨 Design your astronaut: name, skin, hair, outfit.</li><li>🚀 Plan the ship: every extra module adds weight, travel time and risk.</li><li>🍲😴💛 Keep your astronaut fed, rested and happy.</li><li>🧱 Build and decorate the base block by block.</li><li>🎯 Play repair, plant care, storm and maze missions, and explore the surface.</li><li>📡 Face real NASA space weather and learn the real science behind it.</li></ul>${has ? `<button id="bCont">▶ Continue as ${S.name}</button> ` : ""}<button id="bNew" class="${has ? "alt" : ""}">New game</button>`;
+          `<h2>🌙 Lunar Base Junior</h2><p>A life-sim on the Moon. Create your astronaut, plan the mission, fly to the Moon, and look after your crew at Hopper Base near the lunar south pole, where NASA plans to land humans with Artemis.</p><ul><li>🎨 Design your astronaut: name, style, skin, hair, eyes and accessories.</li><li>🚀 Plan the ship: every extra module adds weight, travel time and risk.</li><li>🍲😴💛 Keep your astronaut fed, rested and happy.</li><li>🧱 Build and decorate the base block by block.</li><li>🎯 Play power grid, greenhouse, storm shield and dark crater missions, and explore the surface.</li><li>📡 Face real NASA space weather and learn the real science behind it.</li></ul>${has ? `<button id="bCont">▶ Continue as ${S.name}</button> ` : ""}<button id="bNew" class="${has ? "alt" : ""}">New game</button>`;
         if (has)
           $("bCont").onclick = () => {
             $("ovTitle").classList.remove("on");
@@ -4095,6 +4510,9 @@
                 hairCol: S.hairCol,
                 eyes: S.eyes,
                 outfit: S.outfit,
+                char: S.char,
+                preset: S.preset,
+                gender: S.gender,
               }
             : {};
           S = Object.assign(defSave(), keep);
